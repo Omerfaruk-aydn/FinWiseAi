@@ -6,7 +6,7 @@ const resendApiKey = process.env.RESEND_API_KEY?.trim() || "";
 const resendClient = resendApiKey ? new Resend(resendApiKey) : null;
 const smtpHost = process.env.SMTP_HOST || "smtp.gmail.com";
 const smtpPort = Number(process.env.SMTP_PORT || "465");
-const smtpUser = process.env.SMTP_USER || "finwise001123@gmail.com";
+const smtpUser = process.env.SMTP_USER || "";
 const smtpPass = (process.env.SMTP_PASS || "").replace(/\s+/g, "");
 const mailFromEmail = process.env.MAIL_FROM_EMAIL || process.env.SMTP_FROM_EMAIL || smtpUser;
 const mailFromName = process.env.MAIL_FROM_NAME || process.env.SMTP_FROM_NAME || "FinWise AI";
@@ -15,7 +15,7 @@ const appBaseUrl = (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL 
 const logoUrl = `${appBaseUrl}/favicon.svg`;
 
 const smtpTransport =
-  smtpPass.length > 0
+  smtpUser.length > 0 && smtpPass.length > 0
     ? nodemailer.createTransport({
         host: smtpHost,
         port: smtpPort,
@@ -202,6 +202,10 @@ export async function sendMail(options: {
         throw new Error("Resend API anahtarı yapılandırılmadı.");
       }
 
+      if (!mailFromEmail) {
+        throw new Error("MAIL_FROM_EMAIL tanımlı değil.");
+      }
+
       if (/@gmail\.com$/i.test(mailFromEmail) || /@googlemail\.com$/i.test(mailFromEmail)) {
         throw new Error("Resend için MAIL_FROM_EMAIL domain tabanlı bir adres olmalıdır.");
       }
@@ -230,6 +234,10 @@ export async function sendMail(options: {
         return true;
       }
       throw new Error("SMTP yapılandırılmadı.");
+    }
+
+    if (!mailFromEmail) {
+      throw new Error("MAIL_FROM_EMAIL veya SMTP_USER tanımlı değil.");
     }
 
     let timeout: ReturnType<typeof setTimeout> | undefined;
