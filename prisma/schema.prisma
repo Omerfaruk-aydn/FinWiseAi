@@ -1,0 +1,550 @@
+// FinWise AI - Prisma Schema
+// PostgreSQL 15+ | Prisma ORM latest
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum IncomeFrequency {
+  MONTHLY
+  WEEKLY
+  YEARLY
+  ONE_TIME
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  TRANSFER
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum CategoryType {
+  INCOME
+  EXPENSE
+}
+
+enum GoalStatus {
+  ACTIVE
+  COMPLETED
+  PAUSED
+}
+
+enum GoalPriority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum DebtType {
+  CREDIT_CARD
+  LOAN
+  MORTGAGE
+  OTHER
+}
+
+enum DebtStatus {
+  ACTIVE
+  PAID
+  OVERDUE
+}
+
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  PAUSED
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+}
+
+enum ActionItemStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+}
+
+enum ActionPlanStatus {
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+enum ReportType {
+  WEEKLY
+  MONTHLY
+}
+
+enum NotificationType {
+  INFO
+  WARNING
+  SUCCESS
+  AI_INSIGHT
+  BUDGET_ALERT
+  GOAL_MILESTONE
+  DEBT_REMINDER
+  SUBSCRIPTION_RENEWAL
+}
+
+enum RiskTolerance {
+  CONSERVATIVE
+  BALANCED
+  AGGRESSIVE
+}
+
+enum FinancialGoalType {
+  EMERGENCY_FUND
+  HOME
+  CAR
+  RETIREMENT
+  PAY_OFF_DEBT
+  TRAVEL
+  EDUCATION
+  OTHER
+}
+
+// ============================================================
+// MODELS
+// ============================================================
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(USER)
+  currency     String   @default("TRY")
+  image        String?  @db.Text
+  isActive     Boolean  @default(true)
+  sessionVersion Int    @default(1)
+  lastLoginAt DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  profile       UserProfile?
+  incomes       Income[]
+  expenses      Expense[]
+  transactions  Transaction[]
+  budgets       Budget[]
+  goals         Goal[]
+  debts         Debt[]
+  subscriptions Subscription[]
+  healthScores  FinancialHealthScore[]
+  conversations AIConversation[]
+  analyses      AIAnalysis[]
+  actionPlans   ActionPlan[]
+  reports       Report[]
+  notifications Notification[]
+
+  @@index([email])
+  @@index([role])
+  @@index([createdAt])
+}
+
+model UserProfile {
+  id                  String             @id @default(cuid())
+  userId              String             @unique
+  city                String?
+  occupation          String?
+  incomeFrequency     IncomeFrequency    @default(MONTHLY)
+  financialGoalType   FinancialGoalType  @default(EMERGENCY_FUND)
+  riskTolerance       RiskTolerance      @default(BALANCED)
+  hasDebt             Boolean            @default(false)
+  onboardingCompleted Boolean            @default(false)
+  weeklyDigest        Boolean            @default(true)
+  budgetAlerts        Boolean            @default(true)
+  actionPlanReminders Boolean            @default(true)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Category {
+  id        String       @id @default(cuid())
+  name      String
+  type      CategoryType
+  icon      String       @default("circle")
+  color     String       @default("#64748B")
+  isDefault Boolean      @default(false)
+  userId    String?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  expenses      Expense[]
+  transactions  Transaction[]
+  budgetItems   BudgetCategory[]
+
+  @@index([type])
+  @@index([userId])
+  @@index([isDefault])
+}
+
+model Income {
+  id        String          @id @default(cuid())
+  userId    String
+  title     String
+  amount    Float
+  category  String
+  frequency IncomeFrequency @default(MONTHLY)
+  date      DateTime
+  note      String?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, date])
+  @@index([createdAt])
+}
+
+model Expense {
+  id            String        @id @default(cuid())
+  userId        String
+  title         String
+  amount        Float
+  categoryId    String?
+  paymentMethod PaymentMethod @default(CARD)
+  isRecurring   Boolean       @default(false)
+  date          DateTime
+  note          String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([userId, date])
+  @@index([categoryId])
+  @@index([createdAt])
+}
+
+model Transaction {
+  id         String          @id @default(cuid())
+  userId     String
+  type       TransactionType
+  title      String
+  amount     Float
+  categoryId String?
+  date       DateTime
+  source     String?
+  note       String?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([userId, date])
+  @@index([userId, type])
+  @@index([categoryId])
+  @@index([createdAt])
+}
+
+model Budget {
+  id              String   @id @default(cuid())
+  userId          String
+  month           Int
+  year            Int
+  totalIncome     Float
+  plannedExpense  Float
+  plannedSaving   Float
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categories BudgetCategory[]
+
+  @@unique([userId, month, year])
+  @@index([userId])
+  @@index([userId, month, year])
+}
+
+model BudgetCategory {
+  id             String   @id @default(cuid())
+  budgetId       String
+  categoryId     String
+  plannedAmount  Float
+  actualAmount   Float    @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  budget   Budget   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([budgetId, categoryId])
+  @@index([budgetId])
+  @@index([categoryId])
+}
+
+model Goal {
+  id            String       @id @default(cuid())
+  userId        String
+  title         String
+  targetAmount  Float
+  currentAmount Float        @default(0)
+  deadline      DateTime?
+  priority      GoalPriority @default(MEDIUM)
+  status        GoalStatus   @default(ACTIVE)
+  note          String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, status])
+  @@index([createdAt])
+}
+
+model Debt {
+  id             String     @id @default(cuid())
+  userId         String
+  title          String
+  type           DebtType
+  totalAmount    Float
+  remainingAmount Float
+  minimumPayment Float
+  interestRate   Float      @default(0)
+  dueDay         Int?
+  status         DebtStatus @default(ACTIVE)
+  note           String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, status])
+  @@index([createdAt])
+}
+
+model Subscription {
+  id              String             @id @default(cuid())
+  userId          String
+  title           String
+  amount          Float
+  billingCycle    BillingCycle       @default(MONTHLY)
+  nextBillingDate DateTime
+  category        String             @default("Diğer")
+  status          SubscriptionStatus @default(ACTIVE)
+  note            String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, status])
+  @@index([nextBillingDate])
+}
+
+model FinancialHealthScore {
+  id                   String   @id @default(cuid())
+  userId               String
+  score                Float
+  incomeExpenseRatio   Float
+  savingRate           Float
+  debtLoad             Float
+  spendingDiscipline   Float
+  goalProgress         Float
+  explanation          String?
+  createdAt            DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, createdAt])
+}
+
+model AIConversation {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String   @default("Yeni Konuşma")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages AIMessage[]
+
+  @@index([userId])
+  @@index([userId, createdAt])
+}
+
+model AIMessage {
+  id             String      @id @default(cuid())
+  conversationId String
+  role           MessageRole
+  content        String      @db.Text
+  metadataJson   String?     @db.Text
+  createdAt      DateTime    @default(now())
+
+  conversation AIConversation    @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  feedbacks    AIMessageFeedback[]
+
+  @@index([conversationId])
+  @@index([createdAt])
+}
+
+model AIMessageFeedback {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  rating    Int      // 1 = like, -1 = dislike
+  createdAt DateTime @default(now())
+
+  message AIMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([messageId])
+  @@index([userId])
+}
+
+model AIAnalysis {
+  id           String   @id @default(cuid())
+  userId       String
+  type         String
+  inputJson    String   @db.Text
+  outputJson   String?  @db.Text
+  score        Float?
+  isError      Boolean  @default(false)
+  errorMessage String?
+  durationMs   Int?
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+  @@index([isError])
+}
+
+model ActionPlan {
+  id        String           @id @default(cuid())
+  userId    String
+  title     String
+  weekStart DateTime
+  weekEnd   DateTime
+  summary   String?          @db.Text
+  status    ActionPlanStatus @default(ACTIVE)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  user  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items ActionItem[]
+
+  @@index([userId])
+  @@index([userId, weekStart])
+  @@index([createdAt])
+}
+
+model ActionItem {
+  id           String           @id @default(cuid())
+  actionPlanId String
+  title        String
+  description  String?          @db.Text
+  category     String?
+  priority     GoalPriority     @default(MEDIUM)
+  status       ActionItemStatus @default(PENDING)
+  dueDate      DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  actionPlan ActionPlan @relation(fields: [actionPlanId], references: [id], onDelete: Cascade)
+
+  @@index([actionPlanId])
+  @@index([status])
+}
+
+model Report {
+  id          String     @id @default(cuid())
+  userId      String
+  title       String
+  type        ReportType
+  periodStart DateTime
+  periodEnd   DateTime
+  summary     String?    @db.Text
+  contentJson String?    @db.Text
+  pdfUrl      String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, type])
+  @@index([createdAt])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  title     String
+  message   String           @db.Text
+  type      NotificationType @default(INFO)
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, isRead])
+  @@index([createdAt])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expires   DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([token])
+}
+
+model AdminAuditLog {
+  id           String   @id @default(cuid())
+  adminId      String
+  action       String
+  targetType   String
+  targetId     String?
+  metadataJson String?  @db.Text
+  createdAt    DateTime @default(now())
+
+  @@index([adminId])
+  @@index([targetType])
+  @@index([createdAt])
+}
