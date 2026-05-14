@@ -65,13 +65,6 @@ export default function LandingPage() {
             <span className="text-xl font-bold tracking-tight text-[#0F172A]">FinWise AI</span>
           </Link>
 
-          <nav className="hidden lg:flex items-center gap-10 text-[15px] font-medium text-slate-600">
-            <Link href="#ozellikler" className="hover:text-[#10B981] transition-colors">Özellikler</Link>
-            <Link href="#ai-koc" className="hover:text-[#10B981] transition-colors">AI Koç</Link>
-            <Link href="#raporlar" className="hover:text-[#10B981] transition-colors">Raporlar</Link>
-            <Link href="#fiyatlandirma" className="hover:text-[#10B981] transition-colors">Fiyatlandırma</Link>
-          </nav>
-
           <div className="flex items-center gap-3 sm:gap-6">
             <Link href="/auth/login" className="text-[15px] font-semibold text-[#0F172A] hover:text-[#10B981] transition-colors">
               Giriş Yap
