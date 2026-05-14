@@ -51,7 +51,7 @@ Ekran görüntüleri `image/` klasörü altında tutulur. GitHub üzerinde doğr
 
 | Ana Sayfa | Giriş | Kayıt |
 |---|---|---|
-| ![Ana Sayfa](image/home.png) | ![Giriş](image/auth-login.png) | ![Kayıt](image/auth-register.png) |
+| ![Ana Sayfa](image/landing-page.png) | ![Giriş](image/auth-login.png) | ![Kayıt](image/auth-register.png) |
 
 | Şifremi Unuttum | Güvenlik |
 |---|---|
