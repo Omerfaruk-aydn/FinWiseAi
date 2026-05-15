@@ -13,12 +13,12 @@ import { getRequiredSession } from "@/lib/session";
 import { sendSecurityNotificationEmail } from "@/lib/email";
 
 const changePasswordSchema = z.object({
-  currentPassword: z.string().min(1, "Mevcut sifre zorunludur."),
+  currentPassword: z.string().min(1, "Mevcut şifre zorunludur."),
   newPassword: z
     .string()
-    .min(8, "Sifre en az 8 karakter olmali.")
-    .regex(/[A-Z]/, "Sifre en az bir buyuk harf icermelidir.")
-    .regex(/[0-9]/, "Sifre en az bir rakam icermelidir."),
+    .min(8, "Şifre en az 8 karakter olmalıdır.")
+    .regex(/[A-Z]/, "Şifre en az bir büyük harf içermelidir.")
+    .regex(/[0-9]/, "Şifre en az bir rakam içermelidir."),
 });
 
 export async function PATCH(req: NextRequest) {
@@ -41,7 +41,7 @@ export async function PATCH(req: NextRequest) {
 
     const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
     if (!isValid) {
-      return errorResponse("INVALID_PASSWORD", "Mevcut sifre hatali.", 400);
+      return errorResponse("INVALID_PASSWORD", "Mevcut şifre hatalı.", 400);
     }
 
     const newHash = await bcrypt.hash(newPassword, 12);
@@ -52,11 +52,11 @@ export async function PATCH(req: NextRequest) {
 
     await sendSecurityNotificationEmail(
       user.email,
-      "Sifre degistirildi",
-      "Hesabinizin parolasi basariyla degistirildi. Bu islemi siz yapmadiysaniz hemen destek ile iletisim kurun."
+      "Şifre değiştirildi",
+      "Hesabınızın parolası başarıyla değiştirildi. Bu işlemi siz yapmadıysanız hemen destek ile iletişim kurun."
     );
 
-    return successResponse({ message: "Sifre basariyla degistirildi." });
+    return successResponse({ message: "Şifre başarıyla değiştirildi." });
   } catch (error) {
     return internalErrorResponse(error);
   }

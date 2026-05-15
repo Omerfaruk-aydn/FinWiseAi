@@ -160,9 +160,9 @@ export default function GoalsPage() {
       return aRisk - bRisk;
     })[0];
   const goalInsight = goals.length === 0
-    ? "Hedef eklediginde AI fizibilite yorumu burada gorunecek."
+    ? "Hedef eklediğinde AI fizibilite yorumu burada görünecek."
     : riskiestGoal
-      ? `${riskiestGoal.title} hedefi oncelikli takip edilmeli. Ortalama ilerleme %${avgProgress}; aylik birikim planini bu hedefe gore guncelle.`
+      ? `${riskiestGoal.title} hedefi öncelikli takip edilmeli. Ortalama ilerleme %${avgProgress}; aylık birikim planını bu hedefe göre güncelle.`
       : "Hedeflerin dengeli ilerliyor.";
 
   return (

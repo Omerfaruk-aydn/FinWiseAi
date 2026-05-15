@@ -81,15 +81,15 @@ function isTableFollowUpCommand(value: string): boolean {
   const normalized = normalizeCommandText(value);
   return [
     "tablo",
-    "tabloyla goster",
-    "tablo halinde goster",
-    "tablo olarak goster",
-    "tablo goster",
-    "bunu tabloyla goster",
-    "bunu tabloya cevir",
-    "bunu tablo olarak goster",
-    "tabloya cevir",
-    "tabloya donustur",
+    "tabloyla göster",
+    "tablo halinde göster",
+    "tablo olarak göster",
+    "tablo göster",
+    "bunu tabloyla göster",
+    "bunu tabloya çevir",
+    "bunu tablo olarak göster",
+    "tabloya çevir",
+    "tabloya dönüştür",
   ].includes(normalized);
 }
 

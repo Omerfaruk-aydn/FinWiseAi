@@ -559,7 +559,7 @@ export default function TransactionsPage() {
               <div>
                 <div className="text-xs font-medium text-slate-500 mb-1">En yoğun gün</div>
                 <div className="text-sm font-bold text-slate-900">{busiestDay}</div>
-                <div className="text-[10px] text-slate-400">{thisMonthTransactions.length} aylik kayittan hesaplandi</div>
+                <div className="text-[10px] text-slate-400">{thisMonthTransactions.length} aylık kayıttan hesaplandı</div>
               </div>
             </div>
 

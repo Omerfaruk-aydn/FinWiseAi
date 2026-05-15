@@ -153,7 +153,7 @@ export async function GET(req: NextRequest) {
       ...recentUsers.map((user) => ({
         id: `user-${user.id}`,
         user: user.email,
-        action: "kayit oldu",
+        action: "kayıt oldu",
         time: formatAdminDate(user.createdAt),
         avatar: initials(user.name ?? user.email),
         bg: "bg-green-500",
@@ -161,8 +161,8 @@ export async function GET(req: NextRequest) {
       })),
       ...recentReports.map((report) => ({
         id: `report-${report.id}`,
-        user: report.user?.email ?? "bilinmeyen kullanici",
-        action: "rapor olusturdu",
+        user: report.user?.email ?? "bilinmeyen kullanıcı",
+        action: "rapor oluşturdu",
         time: formatAdminDate(report.createdAt),
         avatar: initials(report.user?.name ?? report.user?.email ?? "RU"),
         bg: "bg-purple-500",
@@ -170,8 +170,8 @@ export async function GET(req: NextRequest) {
       })),
       ...recentAnalyses.map((analysis) => ({
         id: `ai-${analysis.id}`,
-        user: analysis.user?.email ?? "bilinmeyen kullanici",
-        action: analysis.isError ? `${analysis.type} hatasi aldi` : `${analysis.type} analizi aldi`,
+        user: analysis.user?.email ?? "bilinmeyen kullanıcı",
+        action: analysis.isError ? `${analysis.type} hatası aldı` : `${analysis.type} analizi aldı`,
         time: formatAdminDate(analysis.createdAt),
         avatar: initials(analysis.user?.name ?? analysis.user?.email ?? "AI"),
         bg: analysis.isError ? "bg-red-500" : "bg-blue-500",
@@ -203,7 +203,7 @@ export async function GET(req: NextRequest) {
         agent: error.type,
         status: error.isError ? "Hata" : "Uyari",
         statusColor: error.isError ? "text-red-600 bg-red-50" : "text-orange-600 bg-orange-50",
-        desc: error.errorMessage ?? (error.durationMs && error.durationMs > 5000 ? "Yuksek yanit suresi tespit edildi." : "Detay mesaji yok."),
+        desc: error.errorMessage ?? (error.durationMs && error.durationMs > 5000 ? "Yüksek yanıt süresi tespit edildi." : "Detay mesajı yok."),
       })),
       systemHealth: {
         apiUptime: Math.round(Math.max(0, 100 - errorRate) * 100) / 100,

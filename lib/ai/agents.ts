@@ -173,7 +173,7 @@ function buildContextString(ctx: FinancialContext): string {
 - Gelir Sikligi: ${ctx.profile.incomeFrequency}
 - Ana Finansal Hedef: ${ctx.profile.financialGoalType}
 - Risk Tercihi: ${ctx.profile.riskTolerance}
-- Borc Beyani: ${ctx.profile.hasDebt ? "Borc var" : "Borc yok"}`
+- Borç Beyanı: ${ctx.profile.hasDebt ? "Borç var" : "Borç yok"}`
     : "- Profil verisi yok";
 
   return `${getCurrentDateContext()}
@@ -667,19 +667,19 @@ Yukarıdaki verilere dayanarak harcama analizini yap ve aşağıdaki JSON format
 chart alanında verilen harcama kategorilerini (topExpenseCategories) kullan. followUps alanında konuya özgü 3 Türkçe takip sorusu üret.`;
   const systemPrompt = `${SPENDING_ANALYSIS_PROMPT}
 
-KALITE BEKLENTISI:
-- Kullanici belirli bir kategori soruyorsa cevabin cogunu o kategoriye ayir.
-- Kullanici "hangi harcamayi/gideri once kismaliyim" gibi oncelik sorarsa summary su yapida olsun: "Once X kategorisine odaklanin. Cunku ... . Bu hafta 1) ... 2) ... 3) ...". Tek cumlelik cevap verme.
-- Oncelik sorularinda ilk cümle doğrudan en kritik kategoriye işaret etsin; sonucu uzatmadan, karar verdiren bir giriş yap.
-- Market sorusunda arac hedefi, borc veya ilgisiz hedef tavsiyesine kayma.
-- Summary 3-5 cumle, diagnosis.explanation 4-7 cumle olsun ve birbirini tekrar etmesin.
-- En az 3 insight, 4 recommendation ve 3 action item uret.
-- Veride olmayan tutar, oran, kategori limiti veya kullanici davranisi uydurma.
-- Oneriler somut olsun: haftalik sepet limiti, alisveris listesi, birim fiyat kontrolu, yemek plani, gereksiz urunleri eleme, kategori takibi gibi adimlar kullan.
-- Action item'lar bu hafta uygulanabilir, kucuk ve olculebilir olsun.
-- Genel tavsiye yasak: podcast dinle, kitap oku, finansal okuryazarlik arastir gibi uygulama verisine bagli olmayan maddeler yazma.
+KALİTE BEKLENTİSİ:
+- Kullanıcı belirli bir kategori soruyorsa cevabın çoğunu o kategoriye ayır.
+- Kullanıcı "hangi harcamayı/gideri önce kısmalıyım" gibi öncelik sorarsa summary şu yapıda olsun: "Önce X kategorisine odaklanın. Çünkü ... . Bu hafta 1) ... 2) ... 3) ...". Tek cümlelik cevap verme.
+- Öncelik sorularında ilk cümle doğrudan en kritik kategoriye işaret etsin; sonucu uzatmadan, karar verdiren bir giriş yap.
+- Market sorusunda araç hedefi, borç veya ilgisiz hedef tavsiyesine kayma.
+- Summary 3-5 cümle, diagnosis.explanation 4-7 cümle olsun ve birbirini tekrar etmesin.
+- En az 3 insight, 4 recommendation ve 3 action item üret.
+- Veride olmayan tutar, oran, kategori limiti veya kullanıcı davranışı uydurma.
+- Öneriler somut olsun: haftalık sepet limiti, alışveriş listesi, birim fiyat kontrolü, yemek planı, gereksiz ürünleri eleme, kategori takibi gibi adımlar kullan.
+- Action item'lar bu hafta uygulanabilir, küçük ve ölçülebilir olsun.
+- Genel tavsiye yasak: podcast dinle, kitap oku, finansal okuryazarlık araştır gibi uygulama verisine bağlı olmayan maddeler yazma.
 - Her recommendation ve action item farklı bir açıdan değer katsın; aynı fikri başka kelimelerle tekrarlama.
-${isCuttingQuestion ? "- Bu cevap kisa ama dolu olmali: oncelik, neden, 3 somut adim ve beklenen etki mutlaka olsun." : ""}`;
+${isCuttingQuestion ? "- Bu cevap kısa ama dolu olmalı: öncelik, neden, 3 somut adım ve beklenen etki mutlaka olsun." : ""}`;
   return { prompt, systemPrompt };
 }
 
@@ -751,11 +751,11 @@ Bu gelir verilerine dayanarak profesyonel bir gelir analizi üret. JSON formatı
 
   const systemPrompt = `${INCOME_ANALYSIS_PROMPT}
 
-KALITE BEKLENTISI:
-- Cevap ayni sablon cumleleri tekrarlamasin; gelir istikrari, kaynak cesitliligi, tek kaynaga bagimlilik ve duzenli/tek seferlik gelir dengesini ayri ayri yorumla.
-- En az 3 insight, 4 recommendation ve 3 action item uret.
-- Veride olmayan gelir kaynagi, tutar veya artis orani uydurma.
-- Kullaniciya uygulanabilir, profesyonel ve olculebilir oneriler ver.`;
+KALİTE BEKLENTİSİ:
+- Cevap aynı şablon cümleleri tekrarlamasın; gelir istikrarı, kaynak çeşitliliği, tek kaynağa bağımlılık ve düzenli/tek seferlik gelir dengesini ayrı ayrı yorumla.
+- En az 3 insight, 4 recommendation ve 3 action item üret.
+- Veride olmayan gelir kaynağı, tutar veya artış oranı uydurma.
+- Kullanıcıya uygulanabilir, profesyonel ve ölçülebilir öneriler ver.`;
   return { prompt, systemPrompt };
 }
 
@@ -802,7 +802,7 @@ JSON formatında yanıt ver:
   const rawJson = await generateAIJSON<unknown>(prompt, BUDGET_PLANNER_PROMPT);
   const parsed = BudgetPlanOutputSchema.safeParse(rawJson);
   if (parsed.success) return parsed.data;
-  throw new Error("Butce plani dogrulanamadi.");
+  throw new Error("Bütçe planı doğrulanamadı.");
 
 }
 
@@ -1011,13 +1011,13 @@ JSON formatında yanıt ver:
 }`;
   const systemPrompt = `${ACTION_PLAN_PROMPT}
 
-KALITE BEKLENTISI:
-- Kullanici kac madde istediyse tam o sayida items uret.
-- Her item kayitli finans verisine bagli olsun: kategori, tutar, hedef, gider veya abonelik referansi icerir.
-- Genel tavsiye yasak: podcast dinle, kitap oku, finansal okuryazarlik arastir, arastirma yap gibi belirsiz gorevler yazma.
-- Her gorev bu hafta yapilabilir, olculebilir ve net fiille baslasin.
-- Eger kullanici "3 maddelik" dediyse items dizisi kesinlikle 3 elemanli olsun.
-- Summary en fazla iki cumle olsun; neden bu görevlerin seçildiğini profesyonel ama kısa bir dille anlat.
+KALİTE BEKLENTİSİ:
+- Kullanıcı kaç madde istediyse tam o sayıda items üret.
+- Her item kayıtlı finans verisine bağlı olsun: kategori, tutar, hedef, gider veya abonelik referansı içerir.
+- Genel tavsiye yasak: podcast dinle, kitap oku, finansal okuryazarlık araştır, araştırma yap gibi belirsiz görevler yazma.
+- Her görev bu hafta yapılabilir, ölçülebilir ve net fiille başlasın.
+- Eğer kullanıcı "3 maddelik" dediyse items dizisi kesinlikle 3 elemanlı olsun.
+- Summary en fazla iki cümle olsun; neden bu görevlerin seçildiğini profesyonel ama kısa bir dille anlat.
 - Kullanıcının aktif hedefi yoksa yeni hedef uydurma; mevcut gelir-gider dengesi, abonelikler ve borçlar üzerinden plan üret.
 - Görevler birbirinin tekrarı olmasın; her biri farklı bir davranış değişikliği, kontrol adımı veya otomasyon içersin.
 - İsimler kısa, açıklamalar ise ölçülebilir ve uygulamaya dönük olsun.`;
@@ -1158,7 +1158,7 @@ function buildDeterministicReportFallback(
   }
 ): ReportOutput {
   const currency = input.financialData.currency || "TRY";
-  const periodLabel = reportType === "WEEKLY" ? "Haftalik" : "Aylik";
+  const periodLabel = reportType === "WEEKLY" ? "Haftalık" : "Aylık";
   const topCategory = periodData.topCategories[0];
   const savingText = new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 1 }).format(periodData.savingRate);
 
@@ -1166,15 +1166,15 @@ function buildDeterministicReportFallback(
     title: `${periodLabel} Finansal Rapor`,
     summary:
       periodData.totalIncome > 0
-        ? `${periodLabel.toLowerCase()} donemde gelir ${formatMoneyForAI(periodData.totalIncome, currency)}, gider ${formatMoneyForAI(periodData.totalExpenses, currency)} ve net nakit akisi ${formatMoneyForAI(periodData.netCashflow, currency)} olarak gorunuyor. Tasarruf orani %${savingText}; en yuksek baski ${topCategory ? topCategory.name : "harcama dagilimi"} tarafinda.`
-        : `${periodLabel.toLowerCase()} donem icin yeterli gelir kaydi bulunmadigi icin rapor, mevcut gider dagilimina gore olusturuldu. Duzenli gelir ve gider kaydi, sonraki raporlarin dogrulugunu artirir.`,
+        ? `${periodLabel.toLowerCase()} dönemde gelir ${formatMoneyForAI(periodData.totalIncome, currency)}, gider ${formatMoneyForAI(periodData.totalExpenses, currency)} ve net nakit akışı ${formatMoneyForAI(periodData.netCashflow, currency)} olarak görünüyor. Tasarruf oranı %${savingText}; en yüksek baskı ${topCategory ? topCategory.name : "harcama dağılımı"} tarafında.`
+        : `${periodLabel.toLowerCase()} dönem için yeterli gelir kaydı bulunmadığı için rapor, mevcut gider dağılımına göre oluşturuldu. Düzenli gelir ve gider kaydı, sonraki raporların doğruluğunu artırır.`,
     highlights: [
       periodData.totalIncome > 0
         ? `Toplam gelir ${formatMoneyForAI(periodData.totalIncome, currency)} seviyesinde.`
-        : "Kaydedilmis gelir verisi bulunmuyor.",
+        : "Kaydedilmiş gelir verisi bulunmuyor.",
       periodData.totalExpenses > 0
         ? `Toplam gider ${formatMoneyForAI(periodData.totalExpenses, currency)} seviyesinde.`
-        : "Kaydedilmis gider verisi bulunmuyor.",
+        : "Kaydedilmiş gider verisi bulunmuyor.",
       `Net nakit akisi ${periodData.netCashflow >= 0 ? "pozitif" : "negatif"} durumda.`,
     ],
     keyInsights: [
@@ -1182,57 +1182,57 @@ function buildDeterministicReportFallback(
         title: "Nakit akisi durumu",
         description:
           periodData.netCashflow >= 0
-            ? "Bu donem net nakit akisi pozitif. Bu, hedef katkisi ve tampon birikim icin alan olusturuyor."
-            : "Bu donem net nakit akisi negatif. Oncelik giderleri gelir seviyesine yaklastirmak olmali.",
+            ? "Bu dönem net nakit akışı pozitif. Bu, hedef katkısı ve tampon birikim için alan oluşturuyor."
+            : "Bu dönem net nakit akışı negatif. Öncelik giderleri gelir seviyesine yaklaştırmak olmalı.",
         severity: periodData.netCashflow >= 0 ? "low" : "high",
       },
       {
-        title: "Tasarruf orani",
+        title: "Tasarruf oranı",
         description:
           periodData.savingRate >= 20
-            ? "Tasarruf orani guclu seviyede ve butce disiplini iyi gorunuyor."
+            ? "Tasarruf oranı güçlü seviyede ve bütçe disiplini iyi görünüyor."
             : periodData.savingRate >= 10
-              ? "Tasarruf orani orta seviyede. Kucuk optimizasyonlarla hizli iyilesme mumkun."
-              : "Tasarruf orani dusuk. Harcama kontrolu ve otomatik birikim plani gerekli.",
+              ? "Tasarruf oranı orta seviyede. Küçük optimizasyonlarla hızlı iyileşme mümkün."
+              : "Tasarruf oranı düşük. Harcama kontrolü ve otomatik birikim planı gerekli.",
         severity: periodData.savingRate >= 20 ? "low" : periodData.savingRate >= 10 ? "medium" : "high",
       },
       {
-        title: "En yuksek gider alani",
+        title: "En yüksek gider alanı",
         description: topCategory
-          ? `${topCategory.name} kategorisi toplam giderlerin yaklasik %${new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 0 }).format(topCategory.percent)} kismini olusturuyor.`
+          ? `${topCategory.name} kategorisi toplam giderlerin yaklaşık %${new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 0 }).format(topCategory.percent)} kısmını oluşturuyor.`
           : "Kategori bazli gider verisi yetersiz.",
         severity: topCategory && topCategory.percent >= 40 ? "high" : "medium",
       },
     ],
     recommendations: [
       {
-        title: "En buyuk gideri haftalik takip et",
+        title: "En büyük gideri haftalık takip et",
         action: topCategory
-          ? `${topCategory.name} kategorisi icin haftalik ust limit belirle ve her harcamayi listeden gec.`
-          : "En buyuk gider kategorisini tespit et ve haftalik limit belirle.",
-        estimatedImpact: "Nakit akisi daha kontrollu olur.",
+          ? `${topCategory.name} kategorisi için haftalık üst limit belirle ve her harcamayı listeden geç.`
+          : "En büyük gider kategorisini tespit et ve haftalık limit belirle.",
+        estimatedImpact: "Nakit akışı daha kontrollü olur.",
         difficulty: "easy",
       },
       {
         title: "Otomatik birikim baslat",
         action:
           periodData.netCashflow > 0
-            ? "Pozitif nakit akisinin kucuk bir kismini maas gununde otomatik birikime aktar."
-            : "Once kucuk bir tampon hesap olustur, sonra otomatik birikime gec.",
+            ? "Pozitif nakit akışının küçük bir kısmını maaş gününde otomatik birikime aktar."
+            : "Önce küçük bir tampon hesap oluştur, sonra otomatik birikime geç.",
         estimatedImpact: "Tasarruf disiplini artar.",
         difficulty: "medium",
       },
       {
-        title: "Duzenli kayit disiplinini koru",
-        action: "Gelir ve gider kayitlarini kategori bazinda temiz tut; rapor kalitesi dogrudan artar.",
-        estimatedImpact: "Gelecek raporlar daha guvenilir olur.",
+        title: "Düzenli kayıt disiplinini koru",
+        action: "Gelir ve gider kayıtlarını kategori bazında temiz tut; rapor kalitesi doğrudan artar.",
+        estimatedImpact: "Gelecek raporlar daha güvenilir olur.",
         difficulty: "easy",
       },
     ],
     nextPeriodGoals: [
-      periodData.netCashflow >= 0 ? "Net nakit akisini pozitif tut" : "Giderleri gelir seviyesine yaklastir",
-      "En buyuk harcama kategorisinde kontrol noktasi olustur",
-      "Tasarruf oranini bir ust seviyeye tasi",
+      periodData.netCashflow >= 0 ? "Net nakit akışını pozitif tut" : "Giderleri gelir seviyesine yaklaştır",
+      "En büyük harcama kategorisinde kontrol noktası oluştur",
+      "Tasarruf oranını bir üst seviyeye taşı",
     ],
     disclaimer: DISCLAIMER,
   };

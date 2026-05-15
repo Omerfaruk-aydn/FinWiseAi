@@ -32,7 +32,7 @@ import { toast } from "sonner";
 import { FilterSelect } from "@/components/ui/filter-select";
 import type { ReportOutput } from "@/lib/ai/schemas";
 
-// ï¿½ï¿½ï¿½ Types ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+// Türler
 
 type MonthTrend = {
   month: number;
@@ -62,7 +62,7 @@ type SpendingByCategoryResponse = {
 
 type ChartTrendRange = "3" | "6" | "12" | "ALL";
 
-// ï¿½ï¿½ï¿½ Period filter helper ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+// Dönem filtresi yardımcı fonksiyonu
 
 function filterByPeriod(data: MonthTrend[], period: string): MonthTrend[] {
   if (!data.length) return data;
@@ -81,13 +81,13 @@ function filterByPeriod(data: MonthTrend[], period: string): MonthTrend[] {
   }
 }
 
-// ï¿½ï¿½ï¿½ Formatting helpers ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+// Biçimlendirme yardımcıları
 
 function formatCurrency(value: number) {
   return `₺${Math.round(value).toLocaleString("tr-TR")}`;
 }
 
-// ï¿½ï¿½ï¿½ Page component ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+// Sayfa bileşeni
 
 export default function AnalyticsPage() {
   const [activeTab, setActiveTab] = React.useState("Bu Ay");
@@ -171,7 +171,7 @@ export default function AnalyticsPage() {
   // Derived: filtered trend data for selected period
   const filteredTrend = React.useMemo(() => filterByPeriod(allTrendData, activeTab), [activeTab, allTrendData]);
 
-  // ï¿½ï¿½ Stat card calculations ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+  // İstatistik kartı hesaplamaları
 
   // Toplam Gider: sum of totalExpenses in filtered period
   const totalExpenses = React.useMemo(
@@ -179,10 +179,10 @@ export default function AnalyticsPage() {
     [filteredTrend]
   );
 
-  // En Yï¿½ksek Kategori: top category from spending-by-category
+  // En yüksek kategori: spending-by-category içindeki ilk kategori
   const topCategory = categoryData.length > 0 ? categoryData[0] : null;
 
-  // Geï¿½en Aya Fark: compare last entry in full data vs the one before it
+  // Geçen aya fark: tüm verideki son kayıt ile bir önceki kaydı karşılaştır
   const prevMonthDiff = React.useMemo(() => {
     if (allTrendData.length < 2) return null;
     const current = allTrendData[allTrendData.length - 1].totalExpenses;
@@ -194,7 +194,7 @@ export default function AnalyticsPage() {
   // Potansiyel Tasarruf: 10% of total expenses in period
   const potentialSavings = totalExpenses * 0.1;
 
-  // ï¿½ï¿½ Chart data for line chart ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+  // Çizgi grafik için veri
   const chartTrendData = chartTrendRange === "ALL" ? allTrendData : allTrendData.slice(-Number(chartTrendRange));
   const lineChartData = chartTrendData.map((m) => ({
     label: m.label,
@@ -202,13 +202,12 @@ export default function AnalyticsPage() {
     gider: m.totalExpenses,
   }));
 
-  // ï¿½ï¿½ Comparison table: current vs previous month by category ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-  // We use categoryData for this month. For diff we don't have prev month per-category,
-  // so we show the overall month-over-month diff as a proxy per row only when period
-  // is "Bu Ay", otherwise we skip the diff badge.
+  // Karşılaştırma tablosu: kategori bazında mevcut ve önceki ay
+  // Bu ay için categoryData kullanıyoruz. Kategori bazında önceki ay verimiz olmadığı için,
+  // fark rozeti yalnızca genel ay-a-ay farkı için gösterilir; aksi durumda atlanır.
   const comparisonRows = categoryData.slice(0, 6);
 
-  // ï¿½ï¿½ Max category amount for bar scaling ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+  // Çubuk ölçekleme için en yüksek kategori tutarı
   const maxCategoryAmount =
     categoryData.length > 0 ? categoryData[0].amount : 1;
   const selectedCategory = categoryData.find((category) => category.id === selectedCategoryId) ?? null;
@@ -216,7 +215,7 @@ export default function AnalyticsPage() {
   const visibleCategoryTotal = selectedCategory ? selectedCategory.amount : categoryTotal;
   const maxVisibleCategoryAmount = visibleCategoryData.length > 0 ? Math.max(...visibleCategoryData.map((category) => category.amount)) : 1;
 
-  // ï¿½ï¿½ï¿½ Render ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+  // Render
 
   return (
     <div className="flex flex-col gap-6 font-sans text-slate-900 pb-8">
@@ -257,7 +256,7 @@ export default function AnalyticsPage() {
         />
       </div>
 
-      {/* Row 1 ï¿½ 4 Stat Cards */}
+      {/* Satır 1 - 4 istatistik kartı */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         {/* Toplam Gider */}
         <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm text-center flex flex-col items-center justify-center">
@@ -271,7 +270,7 @@ export default function AnalyticsPage() {
           <div className="text-[10px] text-slate-400">Seçili dönem toplam harcaman</div>
         </div>
 
-        {/* En Yï¿½ksek Kategori */}
+        {/* En yüksek kategori */}
         <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm text-center flex flex-col items-center justify-center">
           <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center mb-3">
             <Utensils className="w-5 h-5 text-[#10B981]" />
@@ -287,7 +286,7 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        {/* Geï¿½en Aya Fark */}
+        {/* Geçen aya fark */}
         <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm text-center flex flex-col items-center justify-center">
           <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center mb-3">
             <TrendingUp className="w-5 h-5 text-[#10B981]" />
@@ -345,9 +344,9 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* Row 2 ï¿½ Aylï¿½k Gider Trendi + Kategori Daï¿½ï¿½lï¿½mï¿½ */}
+      {/* Satır 2 - Aylık gider trendi + kategori dağılımı */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        {/* Aylï¿½k Gelir / Gider Trendi */}
+        {/* Aylık gelir / gider trendi */}
         <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
@@ -421,7 +420,7 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        {/* Kategori Daï¿½ï¿½lï¿½mï¿½ */}
+        {/* Kategori dağılımı */}
         <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col">
           <h2 className="text-sm font-bold text-slate-900 mb-6">Kategori Dağılımı</h2>
           {loading || categoryData.length === 0 ? (
@@ -491,9 +490,9 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* Row 3 ï¿½ En ï¿½ok Harcanan Kategoriler + Geï¿½en Ay Karï¿½ï¿½laï¿½tï¿½rmasï¿½ */}
+      {/* Satır 3 - En çok harcanan kategoriler + geçen ay karşılaştırması */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        {/* En ï¿½ok Harcanan Kategoriler (Horizontal Bars) */}
+        {/* En çok harcanan kategoriler (Horizontal Bars) */}
         <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
           <h2 className="text-sm font-bold text-slate-900 mb-6">
             En Çok Harcanan Kategoriler
@@ -530,7 +529,7 @@ export default function AnalyticsPage() {
           )}
         </div>
 
-        {/* Geï¿½en Ay Karï¿½ï¿½laï¿½tï¿½rmasï¿½ (Table) */}
+        {/* Geçen ay karşılaştırması (Table) */}
         <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-bold text-slate-900">Geçen Ay Karşılaştırması</h2>
@@ -595,7 +594,7 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* Row 4 ï¿½ AI Harcama Yorumu */}
+      {/* Satır 4 - AI harcama yorumu */}
       <div className="bg-[#ECFDF5] border border-green-100 rounded-xl p-5 shadow-sm flex items-center justify-between">
         <div className="flex items-start gap-4">
           <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shrink-0 border border-green-50">

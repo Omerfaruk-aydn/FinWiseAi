@@ -2,7 +2,7 @@
 
 FinWise AI, kişisel finans yönetimi için geliştirilmiş yapay zeka destekli bir web uygulamasıdır. Gelir, gider, bütçe, borç, hedef, abonelik, rapor ve finansal sağlık verilerini tek panelde toplar; AI asistanı ise kullanıcının gerçek finansal verilerine göre açıklama, analiz ve aksiyon önerisi üretir.
 
-Proje Next.js App Router mimarisi, PostgreSQL, Prisma, Auth.js ve Google Gemini API üzerine kuruludur.
+Uygulama Next.js App Router mimarisi, PostgreSQL, Prisma, Auth.js ve Google Gemini API üzerine kuruludur.
 
 ---
 
@@ -21,6 +21,7 @@ Proje Next.js App Router mimarisi, PostgreSQL, Prisma, Auth.js ve Google Gemini 
 - [Mail Akışları](#mail-akışları)
 - [PDF Raporlama](#pdf-raporlama)
 - [GitHub'a Eklenmemesi Gerekenler](#githuba-eklenmemesi-gerekenler)
+- [Lisans](#lisans)
 
 ---
 
@@ -84,7 +85,7 @@ Ekran görüntüleri `image/` klasörü altında tutulur. GitHub üzerinde doğr
 | ![Aksiyon Planı](image/app-action-plan.png) | ![Raporlar](image/app-reports.png) | ![Ayarlar](image/app-settings.png) |
 
 | Onboarding |
-|---|
+|---|---|
 | ![Onboarding](image/app-onboarding.png) |
 
 ### Admin Paneli
@@ -98,7 +99,7 @@ Ekran görüntüleri `image/` klasörü altında tutulur. GitHub üzerinde doğr
 | ![Admin Analytics](image/admin-analytics.png) | ![AI Logları](image/admin-ai-logs.png) | ![Admin Raporlar](image/admin-reports.png) |
 
 | Admin Ayarları |
-|---|
+|---|---|
 | ![Admin Ayarları](image/admin-settings.png) |
 
 ---
@@ -258,7 +259,7 @@ Production ortamında minimum yapı:
 
 - VPS veya container ortamı
 - PostgreSQL
-- Next.js app server
+- Next.js uygulama sunucusu
 - Reverse proxy
 - HTTPS / SSL
 - SMTP veya mail provider
@@ -289,27 +290,213 @@ Production için kritik kontroller:
 
 ```text
 FinWise AI/
-├── app/
-│   ├── (auth)/auth/          # Login, register, forgot/reset password
-│   ├── (app)/app/            # Kullanıcı uygulama ekranları
-│   ├── admin/                # Admin paneli
-│   └── api/                  # API route'ları
-├── components/
-│   ├── layout/               # Layout bileşenleri
-│   └── ui/                   # UI bileşenleri
-├── lib/
-│   ├── ai/                   # AI provider, agents, orchestrator, prompts
-│   ├── finance/              # Finans hesaplama yardımcıları
-│   ├── email.ts              # Mail gönderim katmanı
-│   ├── prisma.ts             # Prisma client
-│   └── session.ts            # Session yardımcıları
-├── prisma/
-│   └── schema.prisma         # Veritabanı şeması
-├── public/                   # Statik dosyalar
-├── image/                    # README ekran görüntüleri
-├── auth.ts                   # Auth.js yapılandırması
-├── proxy.ts                  # Route koruma
-└── package.json
+├─ app/
+│  ├─ layout.tsx
+│  ├─ globals.css
+│  ├─ page.tsx
+│  ├─ cookies/
+│  │  └─ page.tsx
+│  ├─ privacy/
+│  │  └─ page.tsx
+│  ├─ security/
+│  │  └─ page.tsx
+│  ├─ (auth)/
+│  │  ├─ layout.tsx
+│  │  └─ auth/
+│  │     ├─ login/
+│  │     │  └─ page.tsx
+│  │     ├─ register/
+│  │     │  └─ page.tsx
+│  │     ├─ forgot-password/
+│  │     │  └─ page.tsx
+│  │     └─ reset-password/
+│  │        └─ page.tsx
+│  ├─ (app)/
+│  │  ├─ layout.tsx
+│  │  ├─ app-layout-client.tsx
+│  │  └─ app/
+│  │     ├─ page.tsx
+│  │     ├─ action-plan/page.tsx
+│  │     ├─ analytics/page.tsx
+│  │     ├─ assistant/page.tsx
+│  │     ├─ assistant/_components/
+│  │     │  ├─ ai-result-actions.tsx
+│  │     │  ├─ agent-badge.tsx
+│  │     │  ├─ agent-config.tsx
+│  │     │  ├─ animated-stream-text.tsx
+│  │     │  ├─ conversation-list.tsx
+│  │     │  ├─ empty-state.tsx
+│  │     │  ├─ follow-up-chips.tsx
+│  │     │  ├─ inline-chart.tsx
+│  │     │  ├─ markdown-components.tsx
+│  │     │  ├─ message-actions.tsx
+│  │     │  ├─ message-content.tsx
+│  │     │  ├─ sidebar-cards.tsx
+│  │     │  └─ slash-command-popover.tsx
+│  │     ├─ budget/page.tsx
+│  │     ├─ debts/page.tsx
+│  │     ├─ expenses/page.tsx
+│  │     ├─ goals/page.tsx
+│  │     ├─ goals/[id]/page.tsx
+│  │     ├─ health-score/page.tsx
+│  │     ├─ income/page.tsx
+│  │     ├─ onboarding/page.tsx
+│  │     ├─ reports/page.tsx
+│  │     ├─ settings/page.tsx
+│  │     ├─ subscriptions/page.tsx
+│  │     └─ transactions/page.tsx
+│  └─ admin/
+│     ├─ layout.tsx
+│     ├─ admin-layout-client.tsx
+│     ├─ page.tsx
+│     ├─ ai-logs/page.tsx
+│     ├─ analytics/page.tsx
+│     ├─ categories/page.tsx
+│     ├─ reports/page.tsx
+│     ├─ settings/page.tsx
+│     └─ users/page.tsx
+├─ app/api/
+│  ├─ ai/
+│  │  ├─ action-plan/route.ts
+│  │  ├─ analyze-spending/route.ts
+│  │  ├─ chat/route.ts
+│  │  ├─ chat/stream/route.ts
+│  │  ├─ feedback/route.ts
+│  │  ├─ income-analysis/route.ts
+│  │  └─ report/route.ts
+│  ├─ admin/
+│  │  ├─ ai-logs/route.ts
+│  │  ├─ analytics/route.ts
+│  │  ├─ categories/route.ts
+│  │  ├─ categories/[id]/route.ts
+│  │  ├─ overview/route.ts
+│  │  ├─ reports/route.ts
+│  │  ├─ reports/[id]/route.ts
+│  │  ├─ settings/route.ts
+│  │  ├─ users/route.ts
+│  │  ├─ users/[id]/route.ts
+│  │  └─ users/[id]/reset-password/route.ts
+│  ├─ analytics/
+│  │  ├─ health-score/route.ts
+│  │  ├─ monthly-trend/route.ts
+│  │  ├─ overview/route.ts
+│  │  └─ spending-by-category/route.ts
+│  ├─ auth/
+│  │  ├─ [...nextauth]/route.ts
+│  │  ├─ forgot-password/route.ts
+│  │  ├─ register/route.ts
+│  │  └─ reset-password/route.ts
+│  ├─ budget/
+│  │  ├─ route.ts
+│  │  └─ compare/route.ts
+│  ├─ categories/route.ts
+│  ├─ conversations/
+│  │  ├─ route.ts
+│  │  ├─ [id]/route.ts
+│  │  └─ [id]/title/route.ts
+│  ├─ debts/
+│  │  ├─ route.ts
+│  │  ├─ [id]/route.ts
+│  │  └─ recommendations/route.ts
+│  ├─ expenses/
+│  │  ├─ route.ts
+│  │  └─ [id]/route.ts
+│  ├─ goals/
+│  │  ├─ route.ts
+│  │  └─ [id]/route.ts
+│  ├─ income/
+│  │  ├─ route.ts
+│  │  └─ [id]/route.ts
+│  ├─ newsletter/route.ts
+│  ├─ notifications/route.ts
+│  ├─ reports/
+│  │  ├─ route.ts
+│  │  ├─ [id]/route.ts
+│  │  └─ [id]/pdf/route.ts
+│  ├─ subscriptions/
+│  │  ├─ route.ts
+│  │  └─ [id]/route.ts
+│  ├─ transactions/
+│  │  ├─ route.ts
+│  │  └─ [id]/route.ts
+│  └─ user/
+│     ├─ account/route.ts
+│     ├─ avatar/route.ts
+│     ├─ change-password/route.ts
+│     ├─ export/route.ts
+│     ├─ me/route.ts
+│     ├─ profile/route.ts
+│     └─ sessions/route.ts
+├─ components/
+│  ├─ brand/
+│  │  └─ owl-icon.tsx
+│  ├─ layout/
+│  │  ├─ app-sidebar.tsx
+│  │  └─ app-topbar.tsx
+│  └─ ui/
+│     ├─ ai-insight-card.tsx
+│     ├─ ai-response-card.tsx
+│     ├─ badge.tsx
+│     ├─ button.tsx
+│     ├─ calendar.tsx
+│     ├─ calendar-rac.tsx
+│     ├─ confirm-modal.tsx
+│     ├─ date-picker.tsx
+│     ├─ demo.tsx
+│     ├─ empty-state.tsx
+│     ├─ filter-select.tsx
+│     ├─ input.tsx
+│     ├─ kanban-column.tsx
+│     ├─ loading-skeleton.tsx
+│     ├─ prompt-input.tsx
+│     ├─ progress-bar.tsx
+│     ├─ right-panel.tsx
+│     ├─ shining-text.tsx
+│     ├─ stat-card.tsx
+│     ├─ tab-nav.tsx
+│     ├─ textarea.tsx
+│     └─ tooltip.tsx
+├─ lib/
+│  ├─ ai/
+│  │  ├─ agents.ts
+│  │  ├─ file-parser.ts
+│  │  ├─ format-response.ts
+│  │  ├─ orchestrator.ts
+│  │  ├─ prompts.ts
+│  │  ├─ provider.ts
+│  │  └─ schemas.ts
+│  ├─ finance/
+│  │  └─ calculations.ts
+│  ├─ api-response.ts
+│  ├─ category-utils.ts
+│  ├─ email.ts
+│  ├─ prisma.ts
+│  ├─ session.ts
+│  └─ utils.ts
+├─ prisma/
+│  └─ schema.prisma
+├─ public/
+│  ├─ dashboard-preview1.png
+│  └─ favicon.svg
+├─ image/
+│  └─ README ekran görüntüleri
+├─ docs/
+│  ├─ finwise-ai-prompt.md
+│  └─ finwise-ai-ui-improvement-prompt.md
+├─ types/
+│  └─ next-auth.d.ts
+├─ auth.ts
+├─ next.config.ts
+├─ proxy.ts
+├─ tailwind.config.ts
+├─ postcss.config.mjs
+├─ tsconfig.json
+├─ tsconfig.scripts.json
+├─ package.json
+├─ package-lock.json
+├─ .env.example
+├─ .env.production.example
+└─ README.md
 ```
 
 ---
@@ -398,6 +585,7 @@ package.json
 package-lock.json
 README.md
 .env.example
+.env.production.example
 ```
 
 ---

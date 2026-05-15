@@ -147,10 +147,10 @@ export default function SubscriptionsPage() {
     return bMonthly - aMonthly;
   })[0];
   const subscriptionInsight = activeSubs.length === 0
-    ? "Aktif abonelik bulunmuyor. Abonelik eklediginde analiz paneli otomatik guncellenir."
+    ? "Aktif abonelik bulunmuyor. Abonelik eklediğinde analiz paneli otomatik güncellenir."
     : potentialSavings > 0
-      ? `${activeSubs.length} aktif abonelik var. Aylik odedigin servislerde yillik plana gecis veya iptal kontroluyle yaklasik ₺${potentialSavings.toLocaleString("tr-TR")} tasarruf potansiyeli var.`
-      : "Aboneliklerin agirlikli olarak yillik veya dusuk maliyetli gorunuyor. Yenileme tarihlerini takip etmek yeterli.";
+      ? `${activeSubs.length} aktif abonelik var. Aylık ödediğin servislerde yıllık plana geçiş veya iptal kontrolüyle yaklaşık ₺${potentialSavings.toLocaleString("tr-TR")} tasarruf potansiyeli var.`
+      : "Aboneliklerin ağırlıklı olarak yıllık veya düşük maliyetli görünüyor. Yenileme tarihlerini takip etmek yeterli.";
 
   const chartData = [
     { name: "Bu Ay", value: Math.round(monthlyTotal) }
@@ -315,8 +315,8 @@ export default function SubscriptionsPage() {
                   <CheckCircle2 className="w-3.5 h-3.5 text-[#10B981]" />
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-slate-900 mb-1">{topSubscription ? `${topSubscription.title} maliyetini gozden gecir` : "Yillik plana gecis avantajini kontrol et"}</div>
-                  <div className="text-[10px] text-slate-600 font-medium">Aylik odemelerde yillik plana gecis veya iptal kontrolu yaklasik %10-20 tasarruf saglayabilir.</div>
+                  <div className="text-xs font-bold text-slate-900 mb-1">{topSubscription ? `${topSubscription.title} maliyetini gözden geçir` : "Yıllık plana geçiş avantajını kontrol et"}</div>
+                  <div className="text-[10px] text-slate-600 font-medium">Aylık ödemelerde yıllık plana geçiş veya iptal kontrolü yaklaşık %10-20 tasarruf sağlayabilir.</div>
                 </div>
               </div>
             </div>

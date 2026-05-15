@@ -179,17 +179,17 @@ export default function DebtsPage() {
   else if (debtLoadRatio > 20) riskLevel = "Orta Risk";
   const highestInterestDebt = [...debts].sort((a, b) => b.interestRate - a.interestRate)[0];
   const riskRecommendations = [
-    highestInterestDebt ? `${highestInterestDebt.title} borcunda faiz orani en yuksek; ekstra odemeyi once buraya yonlendir.` : "Aktif borc bulunmuyor.",
-    totalMinPayment > 0 ? `Aylik minimum odeme toplam ${totalMinPayment.toLocaleString("tr-TR")} TL; otomatik odeme hatirlaticisi kur.` : "Minimum odeme yukumlulugu yok.",
-    debtLoadRatio > 40 ? "Borc yuku kritik seviyede; yeni taksit veya kredi kullanmadan once plani daralt." : "Borc yukunu dusuk tutmak icin minimumun uzerinde odeme yap.",
+    highestInterestDebt ? `${highestInterestDebt.title} borcunda faiz oranı en yüksek; ekstra ödemeyi önce buraya yönlendir.` : "Aktif borç bulunmuyor.",
+    totalMinPayment > 0 ? `Aylık minimum ödeme toplam ${totalMinPayment.toLocaleString("tr-TR")} TL; otomatik ödeme hatırlatıcısı kur.` : "Minimum ödeme yükümlülüğü yok.",
+    debtLoadRatio > 40 ? "Borç yükü kritik seviyede; yeni taksit veya kredi kullanmadan önce planı daralt." : "Borç yükünü düşük tutmak için minimumun üzerinde ödeme yap.",
   ];
   const riskComment = debts.length === 0
-    ? "Aktif borc kaydi bulunmuyor. Yeni borc eklediginde risk analizi otomatik guncellenir."
+    ? "Aktif borç kaydı bulunmuyor. Yeni borç eklediğinde risk analizi otomatik güncellenir."
     : debtLoadRatio > 40
-      ? "Borc yukun gelirine gore yuksek. Oncelik yuksek faizli borclari azaltmak ve yeni borclanmayi durdurmak olmali."
+      ? "Borç yükün gelirine göre yüksek. Öncelik yüksek faizli borçları azaltmak ve yeni borçlanmayı durdurmak olmalı."
       : debtLoadRatio > 20
-        ? "Borc yukun izlenmesi gereken seviyede. Minimum odemelerin uzerine cikmak riski azaltir."
-        : "Borc yukun kontrol edilebilir seviyede. Duzenli odeme temposunu koru.";
+        ? "Borç yükün izlenmesi gereken seviyede. Minimum ödemelerin üzerine çıkmak riski azaltır."
+        : "Borç yükün kontrol edilebilir seviyede. Düzenli ödeme temposunu koru.";
 
   const chartData = [
     { name: "Şu An", mevcut: totalRemaining }
