@@ -1,7 +1,6 @@
-"use client";
+﻿"use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import {
   BarChart3,
   TrendingUp,
@@ -12,6 +11,7 @@ import {
   ArrowRight,
   ArrowUpRight,
   ArrowDownRight,
+  X,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -30,8 +30,9 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { FilterSelect } from "@/components/ui/filter-select";
+import type { ReportOutput } from "@/lib/ai/schemas";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ï¿½ï¿½ï¿½ Types ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 type MonthTrend = {
   month: number;
@@ -61,7 +62,7 @@ type SpendingByCategoryResponse = {
 
 type ChartTrendRange = "3" | "6" | "12" | "ALL";
 
-// ─── Period filter helper ─────────────────────────────────────────────────────
+// ï¿½ï¿½ï¿½ Period filter helper ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 function filterByPeriod(data: MonthTrend[], period: string): MonthTrend[] {
   if (!data.length) return data;
@@ -80,19 +81,23 @@ function filterByPeriod(data: MonthTrend[], period: string): MonthTrend[] {
   }
 }
 
-// ─── Formatting helpers ───────────────────────────────────────────────────────
+// ï¿½ï¿½ï¿½ Formatting helpers ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 function formatCurrency(value: number) {
   return `₺${Math.round(value).toLocaleString("tr-TR")}`;
 }
 
-// ─── Page component ───────────────────────────────────────────────────────────
+// ï¿½ï¿½ï¿½ Page component ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 export default function AnalyticsPage() {
-  const router = useRouter();
   const [activeTab, setActiveTab] = React.useState("Bu Ay");
   const [selectedCategoryId, setSelectedCategoryId] = React.useState("ALL");
   const [chartTrendRange, setChartTrendRange] = React.useState<ChartTrendRange>("12");
+  const [showReportModal, setShowReportModal] = React.useState(false);
+  const [reportLoading, setReportLoading] = React.useState(false);
+  const [reportError, setReportError] = React.useState<string | null>(null);
+  const [reportAnalysis, setReportAnalysis] = React.useState<ReportOutput | null>(null);
+  const [reportSection, setReportSection] = React.useState<"overview" | "insights" | "actions">("overview");
 
   // Raw API data
   const [allTrendData, setAllTrendData] = React.useState<MonthTrend[]>([]);
@@ -133,10 +138,40 @@ export default function AnalyticsPage() {
     fetchData();
   }, []);
 
+  const handleDetailedAnalysis = async () => {
+    setShowReportModal(true);
+    setReportSection("overview");
+    setReportLoading(true);
+    setReportError(null);
+    try {
+      const now = new Date();
+      const res = await fetch("/api/ai/report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "MONTHLY",
+          month: now.getMonth() + 1,
+          year: now.getFullYear(),
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json?.error?.message ?? "Detaylı analiz alınamadı.");
+      }
+      const content = json.data?.content ?? json.data?.contentJson ?? json.data;
+      setReportAnalysis(typeof content === "string" ? JSON.parse(content) : content);
+    } catch (error) {
+      setReportError(error instanceof Error ? error.message : "Detaylı analiz alınamadı.");
+      setReportAnalysis(null);
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
   // Derived: filtered trend data for selected period
   const filteredTrend = React.useMemo(() => filterByPeriod(allTrendData, activeTab), [activeTab, allTrendData]);
 
-  // ── Stat card calculations ─────────────────────────────────────────────────
+  // ï¿½ï¿½ Stat card calculations ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
   // Toplam Gider: sum of totalExpenses in filtered period
   const totalExpenses = React.useMemo(
@@ -144,10 +179,10 @@ export default function AnalyticsPage() {
     [filteredTrend]
   );
 
-  // En Yüksek Kategori: top category from spending-by-category
+  // En Yï¿½ksek Kategori: top category from spending-by-category
   const topCategory = categoryData.length > 0 ? categoryData[0] : null;
 
-  // Geçen Aya Fark: compare last entry in full data vs the one before it
+  // Geï¿½en Aya Fark: compare last entry in full data vs the one before it
   const prevMonthDiff = React.useMemo(() => {
     if (allTrendData.length < 2) return null;
     const current = allTrendData[allTrendData.length - 1].totalExpenses;
@@ -159,7 +194,7 @@ export default function AnalyticsPage() {
   // Potansiyel Tasarruf: 10% of total expenses in period
   const potentialSavings = totalExpenses * 0.1;
 
-  // ── Chart data for line chart ──────────────────────────────────────────────
+  // ï¿½ï¿½ Chart data for line chart ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
   const chartTrendData = chartTrendRange === "ALL" ? allTrendData : allTrendData.slice(-Number(chartTrendRange));
   const lineChartData = chartTrendData.map((m) => ({
     label: m.label,
@@ -167,13 +202,13 @@ export default function AnalyticsPage() {
     gider: m.totalExpenses,
   }));
 
-  // ── Comparison table: current vs previous month by category ───────────────
+  // ï¿½ï¿½ Comparison table: current vs previous month by category ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
   // We use categoryData for this month. For diff we don't have prev month per-category,
   // so we show the overall month-over-month diff as a proxy per row only when period
   // is "Bu Ay", otherwise we skip the diff badge.
   const comparisonRows = categoryData.slice(0, 6);
 
-  // ── Max category amount for bar scaling ───────────────────────────────────
+  // ï¿½ï¿½ Max category amount for bar scaling ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
   const maxCategoryAmount =
     categoryData.length > 0 ? categoryData[0].amount : 1;
   const selectedCategory = categoryData.find((category) => category.id === selectedCategoryId) ?? null;
@@ -181,7 +216,7 @@ export default function AnalyticsPage() {
   const visibleCategoryTotal = selectedCategory ? selectedCategory.amount : categoryTotal;
   const maxVisibleCategoryAmount = visibleCategoryData.length > 0 ? Math.max(...visibleCategoryData.map((category) => category.amount)) : 1;
 
-  // ─── Render ────────────────────────────────────────────────────────────────
+  // ï¿½ï¿½ï¿½ Render ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
   return (
     <div className="flex flex-col gap-6 font-sans text-slate-900 pb-8">
@@ -222,7 +257,7 @@ export default function AnalyticsPage() {
         />
       </div>
 
-      {/* Row 1 — 4 Stat Cards */}
+      {/* Row 1 ï¿½ 4 Stat Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         {/* Toplam Gider */}
         <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm text-center flex flex-col items-center justify-center">
@@ -236,7 +271,7 @@ export default function AnalyticsPage() {
           <div className="text-[10px] text-slate-400">Seçili dönem toplam harcaman</div>
         </div>
 
-        {/* En Yüksek Kategori */}
+        {/* En Yï¿½ksek Kategori */}
         <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm text-center flex flex-col items-center justify-center">
           <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center mb-3">
             <Utensils className="w-5 h-5 text-[#10B981]" />
@@ -252,7 +287,7 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        {/* Geçen Aya Fark */}
+        {/* Geï¿½en Aya Fark */}
         <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm text-center flex flex-col items-center justify-center">
           <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center mb-3">
             <TrendingUp className="w-5 h-5 text-[#10B981]" />
@@ -310,9 +345,9 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* Row 2 — Aylık Gider Trendi + Kategori Dağılımı */}
+      {/* Row 2 ï¿½ Aylï¿½k Gider Trendi + Kategori Daï¿½ï¿½lï¿½mï¿½ */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        {/* Aylık Gelir / Gider Trendi */}
+        {/* Aylï¿½k Gelir / Gider Trendi */}
         <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
@@ -386,7 +421,7 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        {/* Kategori Dağılımı */}
+        {/* Kategori Daï¿½ï¿½lï¿½mï¿½ */}
         <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col">
           <h2 className="text-sm font-bold text-slate-900 mb-6">Kategori Dağılımı</h2>
           {loading || categoryData.length === 0 ? (
@@ -456,9 +491,9 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* Row 3 — En Çok Harcanan Kategoriler + Geçen Ay Karşılaştırması */}
+      {/* Row 3 ï¿½ En ï¿½ok Harcanan Kategoriler + Geï¿½en Ay Karï¿½ï¿½laï¿½tï¿½rmasï¿½ */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        {/* En Çok Harcanan Kategoriler (Horizontal Bars) */}
+        {/* En ï¿½ok Harcanan Kategoriler (Horizontal Bars) */}
         <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
           <h2 className="text-sm font-bold text-slate-900 mb-6">
             En Çok Harcanan Kategoriler
@@ -495,7 +530,7 @@ export default function AnalyticsPage() {
           )}
         </div>
 
-        {/* Geçen Ay Karşılaştırması (Table) */}
+        {/* Geï¿½en Ay Karï¿½ï¿½laï¿½tï¿½rmasï¿½ (Table) */}
         <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-bold text-slate-900">Geçen Ay Karşılaştırması</h2>
@@ -560,7 +595,7 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* Row 4 — AI Harcama Yorumu */}
+      {/* Row 4 ï¿½ AI Harcama Yorumu */}
       <div className="bg-[#ECFDF5] border border-green-100 rounded-xl p-5 shadow-sm flex items-center justify-between">
         <div className="flex items-start gap-4">
           <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shrink-0 border border-green-50">
@@ -583,10 +618,125 @@ export default function AnalyticsPage() {
             </p>
           </div>
         </div>
-        <button onClick={() => router.push("/app/assistant")} className="flex items-center gap-2 bg-[#10B981] hover:bg-[#059669] text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors shadow-sm shrink-0">
+        <button onClick={handleDetailedAnalysis} className="flex items-center gap-2 bg-[#10B981] hover:bg-[#059669] text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors shadow-sm shrink-0">
           <Sparkles className="w-3 h-3" /> Detaylı AI Analizi Al
         </button>
       </div>
+
+      {showReportModal && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/40 px-4 py-6">
+          <div className="flex w-full max-w-6xl max-h-[88vh] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-5">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">Detaylı AI Analizi</h3>
+                <p className="mt-1 text-sm text-slate-500">Aylık trend ve kategori verilerine göre hazırlanan rapor.</p>
+              </div>
+              <button type="button" onClick={() => setShowReportModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-6 py-5">
+              {reportLoading ? (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                  AI raporu hazırlanıyor, gelir-gider dengesi ve kategori dağılımı değerlendiriliyor...
+                </div>
+              ) : reportError ? (
+                <div className="rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-red-700">
+                  {reportError}
+                </div>
+              ) : reportAnalysis ? (
+                <div className="grid gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
+                  <aside className="space-y-4">
+                    <div className="rounded-2xl border border-green-100 bg-green-50/50 p-4">
+                      <div className="text-xs font-semibold text-green-700">AI özeti</div>
+                      <div className="mt-2 text-sm leading-6 text-slate-700">{reportAnalysis.summary}</div>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                      <div className="text-xs font-semibold text-slate-500">Rapor başlığı</div>
+                      <div className="mt-2 text-sm font-semibold text-slate-900">{reportAnalysis.title}</div>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                      <div className="text-xs font-semibold text-slate-500">Bölümler</div>
+                      <div className="mt-3 grid grid-cols-3 gap-2">
+                        {[
+                          { key: "overview", label: "Özet" },
+                          { key: "insights", label: "İçgörü" },
+                          { key: "actions", label: "Aksiyon" },
+                        ].map((item) => (
+                          <button
+                            key={item.key}
+                            type="button"
+                            onClick={() => setReportSection(item.key as typeof reportSection)}
+                            className={cn(
+                              "rounded-lg border px-3 py-2 text-xs font-semibold transition-colors",
+                              reportSection === item.key
+                                ? "border-green-200 bg-green-50 text-green-700"
+                                : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                            )}
+                          >
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </aside>
+
+                  <section className="space-y-4">
+                    {reportSection === "overview" && (
+                      <>
+                        <div className="grid gap-3 md:grid-cols-2">
+                          {reportAnalysis.highlights.slice(0, 2).map((item) => (
+                            <div key={item} className="rounded-2xl border border-slate-200 bg-white p-4">
+                              <div className="text-xs font-semibold text-slate-500">Öne çıkan</div>
+                              <div className="mt-2 text-sm leading-6 text-slate-700">{item}</div>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                          <div className="text-xs font-semibold text-slate-500">Sonraki dönem hedefleri</div>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {reportAnalysis.nextPeriodGoals.map((goal) => (
+                              <span key={goal} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                                {goal}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {reportSection === "insights" && (
+                      <div className="grid gap-3 md:grid-cols-2">
+                        {reportAnalysis.keyInsights.map((insight) => (
+                          <div key={insight.title} className="rounded-2xl border border-slate-200 bg-white p-4">
+                            <div className="text-xs font-semibold text-slate-500">{insight.title}</div>
+                            <div className="mt-2 text-sm leading-6 text-slate-700">{insight.description}</div>
+                            <div className="mt-3 text-[10px] font-bold uppercase tracking-wide text-slate-400">{insight.severity}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {reportSection === "actions" && (
+                      <div className="grid gap-3 md:grid-cols-2">
+                        {reportAnalysis.recommendations.map((item) => (
+                          <div key={item.title} className="rounded-2xl border border-green-100 bg-green-50/40 p-4">
+                            <div className="text-xs font-semibold text-green-700">{item.title}</div>
+                            <div className="mt-2 text-sm leading-6 text-slate-700">{item.action}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </section>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

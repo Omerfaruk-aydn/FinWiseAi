@@ -266,7 +266,7 @@ function AppTopbar({ onMobileMenuOpen }: AppTopbarProps) {
 
                 <DropdownMenu.Item asChild>
                   <Link
-                    href="/app/profile"
+                    href="/app/settings#profil"
                     className="flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-slate-700 outline-none transition-colors hover:bg-slate-50 hover:text-slate-900 focus:bg-slate-50"
                   >
                     <User className="h-4 w-4" aria-hidden="true" />

@@ -709,6 +709,22 @@ export default function SettingsPage() {
     return () => observer.disconnect();
   }, []);
 
+  React.useEffect(() => {
+    const scrollToHashSection = () => {
+      const hash = window.location.hash.replace("#", "") as SectionId | "";
+      if (!hash) return;
+      if (!NAV_ITEMS.some((item) => item.id === hash)) return;
+      window.requestAnimationFrame(() => {
+        document.getElementById(hash)?.scrollIntoView({ behavior: "auto", block: "start" });
+      });
+    };
+
+    scrollToHashSection();
+    window.addEventListener("hashchange", scrollToHashSection);
+
+    return () => window.removeEventListener("hashchange", scrollToHashSection);
+  }, []);
+
   function scrollToSection(id: SectionId) {
     setActiveTab(id);
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });

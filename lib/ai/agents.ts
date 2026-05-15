@@ -1,6 +1,6 @@
 // AI Agent İmplementasyonları
 
-import { generateAIJSON } from "./provider";
+import { generateAIJSON, generateAIResponse, cleanJSONText } from "./provider";
 import {
   SPENDING_ANALYSIS_PROMPT,
   INCOME_ANALYSIS_PROMPT,
@@ -256,6 +256,153 @@ function parseAndValidateIncomeResponse(rawJson: unknown): IncomeAnalysisOutput 
   const parsed = IncomeAnalysisOutputSchema.safeParse(rawJson);
   if (parsed.success) return parsed.data;
   throw new Error("Gelir analizi doğrulanamadı.");
+}
+
+function buildDeterministicIncomeAnalysisFallback(
+  input: IncomeAnalysisContext
+): IncomeAnalysisOutput {
+  const currency = input.currency || "TRY";
+  const topSource = input.topIncomeSources[0];
+  const topCategory = input.incomeByCategory[0];
+  const recurringShare = input.monthlyIncome > 0 ? (input.recurringIncome / input.monthlyIncome) * 100 : 0;
+  const oneTimeShare = input.monthlyIncome > 0 ? (input.oneTimeIncome / input.monthlyIncome) * 100 : 0;
+  const growth = input.monthlyGrowthRate;
+  const status: "good" | "warning" | "risk" =
+    input.monthlyIncome <= 0
+      ? "risk"
+      : growth >= 10 && recurringShare >= 60
+        ? "good"
+        : growth >= 0
+          ? "warning"
+          : "risk";
+
+  const summary =
+    input.monthlyIncome > 0
+      ? `Aylık gelir ${formatMoneyForAI(input.monthlyIncome, currency)} seviyesinde. Düzenli gelir oranı ${formatPercentForAI(recurringShare)} ile güçlü görünürken, tek seferlik gelir payı ${formatPercentForAI(oneTimeShare)}. Gelir akışını daha dengeli hale getirmek için en büyük kaynak ve kategori payını sıkı takip etmek gerekir.`
+      : "Kayıtlı gelir verisi bulunmadığı için gelir akışını değerlendirmek için önce düzenli kayıt tutmak gerekir. En azından gelir kaynaklarını ve kategorileri netleştirmek, sonraki analizlerin doğruluğunu artırır.";
+
+  return {
+    summary,
+    diagnosis: {
+      status,
+      mainIssue:
+        input.monthlyIncome <= 0
+          ? "Kayıtlı gelir verisi yetersiz."
+          : topSource
+            ? `En güçlü kaynak ${topSource.name} üzerinden yoğunlaşma var.`
+            : "Gelir kaynakları yeterince ayrışmıyor.",
+      explanation:
+        input.monthlyIncome > 0
+          ? `Bu ay toplam gelir ${formatMoneyForAI(input.monthlyIncome, currency)}. Düzenli gelir ${formatMoneyForAI(input.recurringIncome, currency)}, tek seferlik gelir ${formatMoneyForAI(input.oneTimeIncome, currency)}. Aylık büyüme oranı ${formatPercentForAI(growth)}. En büyük gelir kaynağı varsa bu kaynak planlamada ana referans olmalı; tek kaynağa bağımlılığı azaltmak için ikinci bir gelir hattı oluşturmak da faydalı olur.`
+          : "Gelir analizi için yeterli kayıt olmadığı için sistem yalnızca kayıt eksikliğini gösterebilir. Gelirlerin kategori ve kaynak bazında düzenli girilmesi, sonraki analizlerin güvenilirliğini artırır.",
+    },
+    insights: [
+      {
+        title: "Gelir istikrarı",
+        description:
+          recurringShare >= 60
+            ? "Gelirin büyük kısmı düzenli kaynaklardan geliyor; bu, planlama açısından güçlü bir işaret."
+            : "Düzenli gelir payını artırmak, aylık planlamayı daha öngörülebilir hale getirir.",
+        severity: recurringShare >= 60 ? "low" : "medium",
+      },
+      {
+        title: "Kaynak yoğunlaşması",
+        description:
+          topSource
+            ? `${topSource.name} gelir akışında öne çıkıyor. Bu kaynağın değişmesi toplam geliri doğrudan etkileyebilir.`
+            : "Gelir kaynakları net ayrışmadığı için analiz sınırlı kalıyor.",
+        severity: topSource && topSource.percent >= 70 ? "high" : "medium",
+      },
+      {
+        title: "Tek seferlik gelir payı",
+        description:
+          oneTimeShare > 0
+            ? `Tek seferlik gelir payı ${formatPercentForAI(oneTimeShare)}. Bu gelir, düzenli bütçe planında ihtiyatla kullanılmalı.`
+            : "Tek seferlik gelir görünmüyor; bu, gelir akışını daha tahmin edilebilir yapar.",
+        severity: oneTimeShare >= 40 ? "medium" : "low",
+      },
+    ],
+    recommendations: [
+      {
+        title: "Ana gelir kaynağını izole et",
+        action: topSource
+          ? `${topSource.name} gelirini ayrı takip ederek aylık dalgalanma riskini görünür hale getir.`
+          : "Her gelir kaynağını ayrı satırda takip etmeye başla.",
+        estimatedImpact: "Gelir bağımlılığı daha net görünür.",
+        difficulty: "easy",
+      },
+      {
+        title: "Düzenli gelir oranını yükselt",
+        action:
+          recurringShare < 60
+            ? "Mümkünse düzenli gelir sağlayan bir ikinci kanal ekle ve tek seferlik gelire olan bağımlılığı azalt."
+            : "Mevcut düzenli gelir akışını koru ve otomatik takip oluştur.",
+        estimatedImpact: "Aylık bütçe daha öngörülebilir olur.",
+        difficulty: "medium",
+      },
+      {
+        title: "Tek seferlik gelirleri ayrıştır",
+        action:
+          oneTimeShare > 0
+            ? "Tek seferlik gelirleri harcama planına doğrudan karıştırma; önce birikim veya tampon hesabına ayır."
+            : "Tek seferlik gelir oluşursa ayrı bir kategoriye kaydet.",
+        estimatedImpact: "Yanlış bütçe varsayımı azalır.",
+        difficulty: "easy",
+      },
+      {
+        title: "Gelir kategorilerini temiz tut",
+        action:
+          topCategory
+            ? `${topCategory.name} kategorisini standartlaştır ve aynı gelir türünü farklı isimlerle kaydetme.`
+            : "Gelir kategorilerini az ama net tut.",
+        estimatedImpact: "Analiz kalitesi artar.",
+        difficulty: "easy",
+      },
+    ],
+    numbers: {
+      monthlyIncome: input.monthlyIncome,
+      recurringIncome: input.recurringIncome,
+      oneTimeIncome: input.oneTimeIncome,
+      averageMonthlyIncome: input.averageMonthlyIncome,
+      monthlyGrowthRate: input.monthlyGrowthRate,
+      topIncomeShare: input.topIncomeShare,
+    },
+    actionItems: [
+      {
+        title: "Bu haftanın gelir kaynaklarını netleştir",
+        description: "Her gelir kaynağını tek tek gözden geçir ve aynı kaynağı farklı isimlerle kaydetmediğinden emin ol.",
+        dueInDays: 2,
+        priority: "high",
+      },
+      {
+        title: "Düzenli gelir takibi aç",
+        description: "Aylık tekrar eden gelirleri ayrı izlemeye başla ve toplam gelir içindeki payını kontrol et.",
+        dueInDays: 3,
+        priority: "medium",
+      },
+      {
+        title: "Tek seferlik gelirleri ayır",
+        description: "Düzensiz gelir geldiğinde bunu doğrudan harcama bütçesine değil, ayrı bir hesaba kaydet.",
+        dueInDays: 4,
+        priority: "medium",
+      },
+    ],
+    chart: {
+      type: "bar",
+      title: "Gelir Kaynakları",
+      unit: getCurrencySymbol(currency),
+      data: input.topIncomeSources.slice(0, 6).map((source) => ({
+        label: source.name,
+        value: source.amount,
+      })),
+    },
+    followUps: [
+      "Gelirlerimi daha dengeli nasıl artırırım?",
+      "Bu ayki gelir dağılımını tabloyla göster",
+      "Düzenli gelirlerimi nasıl güçlendiririm?",
+    ],
+    disclaimer: DISCLAIMER,
+  };
 }
 
 function getCurrencySymbol(currency?: string): string {
@@ -614,8 +761,15 @@ KALITE BEKLENTISI:
 
 export async function IncomeAnalysisAgent(input: IncomeAnalysisContext): Promise<IncomeAnalysisOutput> {
   const { prompt, systemPrompt } = buildIncomeAnalysisPrompt(input);
-  const rawJson = await generateAIJSON<unknown>(prompt, systemPrompt);
-  return parseAndValidateIncomeResponse(rawJson);
+  try {
+    const rawJson = await generateAIJSON<unknown>(prompt, systemPrompt);
+    const parsed = IncomeAnalysisOutputSchema.safeParse(rawJson);
+    if (parsed.success) return parsed.data;
+  } catch {
+    // fall through to deterministic fallback
+  }
+
+  return buildDeterministicIncomeAnalysisFallback(input);
 }
 
 // ============================================================
@@ -870,12 +1024,314 @@ KALITE BEKLENTISI:
   return { prompt, systemPrompt };
 }
 
+export function buildDeterministicActionPlanFallback(input: AgentInput): ActionPlanOutput {
+  const { financialData } = input;
+  const requestedCount = extractRequestedItemCount(input.userMessage) ?? 3;
+  const topCategory = financialData.topExpenseCategories[0];
+  const subscriptions = [...financialData.subscriptions].sort((a, b) => b.monthlyAmount - a.monthlyAmount);
+  const highestSubscription = subscriptions[0];
+  const topGoal = financialData.goals[0];
+  const topDebt = financialData.debts[0];
+  const monthlyIncome = financialData.monthlyIncome;
+  const monthlyExpenses = financialData.monthlyExpenses;
+  const netCashflow = financialData.netCashflow;
+  const currency = financialData.currency;
+  const recurringLoad = financialData.subscriptions.reduce((sum, item) => sum + item.monthlyAmount, 0);
+  const debtPayments = financialData.debts.reduce((sum, item) => sum + item.minimumPayment, 0);
+
+  const candidates: ActionPlanOutput["items"] = [];
+
+  if (topCategory) {
+    candidates.push({
+      title: `${topCategory.categoryName} harcamasını haftalık limite bağla`,
+      description: `${topCategory.categoryName} kategorisi bu ay ${formatMoneyForAI(topCategory.amount, currency)} seviyesinde. Bu hafta için günlük takip aç, liste ile harcama yap ve tek seferde kontrol et.`,
+      category: topCategory.categoryName,
+      priority: "HIGH",
+      dueInDays: 2,
+    });
+  }
+
+  if (highestSubscription) {
+    candidates.push({
+      title: "Abonelikleri tek tek gözden geçir",
+      description: `${highestSubscription.title} dahil toplam abonelik yükün yaklaşık ${formatMoneyForAI(recurringLoad, currency)}. Kullanmadığın hizmetleri kapat veya aylık maliyeti düşür.`,
+      category: "Abonelikler",
+      priority: "HIGH",
+      dueInDays: 3,
+    });
+  } else if (topDebt) {
+    candidates.push({
+      title: "Borç ödeme takibini netleştir",
+      description: `${topDebt.title} için minimum ödeme ${formatMoneyForAI(topDebt.minimumPayment, currency)}. Bu hafta ödeme gününü, toplam yükü ve hızlandırma fırsatını tek tabloda netleştir.`,
+      category: "Borçlar",
+      priority: "HIGH",
+      dueInDays: 3,
+    });
+  } else {
+    candidates.push({
+      title: "Otomatik birikim planı kur",
+      description: `Net nakit akışın ${formatMoneyForAI(netCashflow, currency)}. Maaş gününde küçük ama düzenli bir otomatik transfer belirleyerek tasarruf disiplinini güçlendir.`,
+      category: "Tasarruf",
+      priority: "HIGH",
+      dueInDays: 2,
+    });
+  }
+
+  if (topGoal) {
+    candidates.push({
+      title: `${topGoal.title} için haftalık katkı ayarla`,
+      description: `Hedefin ${formatMoneyForAI(topGoal.targetAmount, currency)} ve mevcut ilerlemen ${formatMoneyForAI(topGoal.currentAmount, currency)}. Bu hafta hedefe gidecek sabit bir katkı belirle ve ilerlemeyi haftalık izle.`,
+      category: "Hedefler",
+      priority: "MEDIUM",
+      dueInDays: 4,
+    });
+  } else {
+    candidates.push({
+      title: "Haftalık nakit akışını kaydet",
+      description: `Aylık gelir ${formatMoneyForAI(monthlyIncome, currency)} ve gider ${formatMoneyForAI(monthlyExpenses, currency)}. 7 gün boyunca günlük kayıt tutarak en büyük sapmaları görünür hale getir.`,
+      category: "Takip",
+      priority: "MEDIUM",
+      dueInDays: 1,
+    });
+  }
+
+  candidates.push({
+    title: "Bu hafta için harcama kontrol listesi oluştur",
+    description: "Market, ulaşım ve küçük harcamalar için kısa bir kontrol listesi hazırlayıp her alışverişten önce listeden geç.",
+    category: "Kontrol",
+    priority: "MEDIUM",
+    dueInDays: 1,
+  });
+
+  candidates.push({
+    title: "Giderleri ödeme günlerine göre grupla",
+    description: "Tekrarlayan ödemeleri tek bir takvimde toplayarak gecikme riskini ve plansız harcamayı azalt.",
+    category: "Planlama",
+    priority: "LOW",
+    dueInDays: 5,
+  });
+
+  candidates.push({
+    title: "İkinci bir tasarruf tamponu belirle",
+    description: "Kısa vadeli beklenmedik masraflar için küçük bir tampon hedefi belirle ve bunu otomatik birikime bağla.",
+    category: "Tasarruf",
+    priority: "LOW",
+    dueInDays: 6,
+  });
+
+  candidates.push({
+    title: "Ödeme tarihlerini tek takvime taşı",
+    description: "Kira, abonelik ve kredi ödemelerini aynı yerde toplayıp haftalık kontrol et; gecikme ve unutma riskini azalt.",
+    category: "Takvim",
+    priority: "LOW",
+    dueInDays: 4,
+  });
+
+  candidates.push({
+    title: "Bu hafta küçük harcama tavanı belirle",
+    description: "Plansız küçük harcamalar için net bir üst limit koy ve harcama öncesi bu limite uyup uymadığını kontrol et.",
+    category: "Disiplin",
+    priority: "LOW",
+    dueInDays: 1,
+  });
+
+  const items = candidates.slice(0, Math.max(1, requestedCount));
+
+  return {
+    title: "Bu Haftanın Finansal Aksiyon Planı",
+    summary: financialData.netCashflow >= 0
+      ? `Bu hafta öncelik, en yüksek harcama alanını kontrol altına almak ve tekrar eden giderleri azaltmak olmalı. Pozitif nakit akışı varsa küçük ama düzenli birikim adımı eklemek planın etkisini artırır.`
+      : `Bu hafta öncelik, nakit akışındaki baskıyı azaltmak ve en büyük gider alanını sıkı takip altına almak olmalı. Tekrarlayan harcamalar ve borç yükü varsa bunları aynı haftada görünür hale getirip sadeleştirmek gerekir.`,
+    items,
+  };
+}
+
+function buildDeterministicReportFallback(
+  input: AgentInput,
+  reportType: "WEEKLY" | "MONTHLY",
+  periodData: {
+    totalIncome: number;
+    totalExpenses: number;
+    netCashflow: number;
+    savingRate: number;
+    topCategories: Array<{ name: string; amount: number; percent: number }>;
+  }
+): ReportOutput {
+  const currency = input.financialData.currency || "TRY";
+  const periodLabel = reportType === "WEEKLY" ? "Haftalik" : "Aylik";
+  const topCategory = periodData.topCategories[0];
+  const savingText = new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 1 }).format(periodData.savingRate);
+
+  return {
+    title: `${periodLabel} Finansal Rapor`,
+    summary:
+      periodData.totalIncome > 0
+        ? `${periodLabel.toLowerCase()} donemde gelir ${formatMoneyForAI(periodData.totalIncome, currency)}, gider ${formatMoneyForAI(periodData.totalExpenses, currency)} ve net nakit akisi ${formatMoneyForAI(periodData.netCashflow, currency)} olarak gorunuyor. Tasarruf orani %${savingText}; en yuksek baski ${topCategory ? topCategory.name : "harcama dagilimi"} tarafinda.`
+        : `${periodLabel.toLowerCase()} donem icin yeterli gelir kaydi bulunmadigi icin rapor, mevcut gider dagilimina gore olusturuldu. Duzenli gelir ve gider kaydi, sonraki raporlarin dogrulugunu artirir.`,
+    highlights: [
+      periodData.totalIncome > 0
+        ? `Toplam gelir ${formatMoneyForAI(periodData.totalIncome, currency)} seviyesinde.`
+        : "Kaydedilmis gelir verisi bulunmuyor.",
+      periodData.totalExpenses > 0
+        ? `Toplam gider ${formatMoneyForAI(periodData.totalExpenses, currency)} seviyesinde.`
+        : "Kaydedilmis gider verisi bulunmuyor.",
+      `Net nakit akisi ${periodData.netCashflow >= 0 ? "pozitif" : "negatif"} durumda.`,
+    ],
+    keyInsights: [
+      {
+        title: "Nakit akisi durumu",
+        description:
+          periodData.netCashflow >= 0
+            ? "Bu donem net nakit akisi pozitif. Bu, hedef katkisi ve tampon birikim icin alan olusturuyor."
+            : "Bu donem net nakit akisi negatif. Oncelik giderleri gelir seviyesine yaklastirmak olmali.",
+        severity: periodData.netCashflow >= 0 ? "low" : "high",
+      },
+      {
+        title: "Tasarruf orani",
+        description:
+          periodData.savingRate >= 20
+            ? "Tasarruf orani guclu seviyede ve butce disiplini iyi gorunuyor."
+            : periodData.savingRate >= 10
+              ? "Tasarruf orani orta seviyede. Kucuk optimizasyonlarla hizli iyilesme mumkun."
+              : "Tasarruf orani dusuk. Harcama kontrolu ve otomatik birikim plani gerekli.",
+        severity: periodData.savingRate >= 20 ? "low" : periodData.savingRate >= 10 ? "medium" : "high",
+      },
+      {
+        title: "En yuksek gider alani",
+        description: topCategory
+          ? `${topCategory.name} kategorisi toplam giderlerin yaklasik %${new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 0 }).format(topCategory.percent)} kismini olusturuyor.`
+          : "Kategori bazli gider verisi yetersiz.",
+        severity: topCategory && topCategory.percent >= 40 ? "high" : "medium",
+      },
+    ],
+    recommendations: [
+      {
+        title: "En buyuk gideri haftalik takip et",
+        action: topCategory
+          ? `${topCategory.name} kategorisi icin haftalik ust limit belirle ve her harcamayi listeden gec.`
+          : "En buyuk gider kategorisini tespit et ve haftalik limit belirle.",
+        estimatedImpact: "Nakit akisi daha kontrollu olur.",
+        difficulty: "easy",
+      },
+      {
+        title: "Otomatik birikim baslat",
+        action:
+          periodData.netCashflow > 0
+            ? "Pozitif nakit akisinin kucuk bir kismini maas gununde otomatik birikime aktar."
+            : "Once kucuk bir tampon hesap olustur, sonra otomatik birikime gec.",
+        estimatedImpact: "Tasarruf disiplini artar.",
+        difficulty: "medium",
+      },
+      {
+        title: "Duzenli kayit disiplinini koru",
+        action: "Gelir ve gider kayitlarini kategori bazinda temiz tut; rapor kalitesi dogrudan artar.",
+        estimatedImpact: "Gelecek raporlar daha guvenilir olur.",
+        difficulty: "easy",
+      },
+    ],
+    nextPeriodGoals: [
+      periodData.netCashflow >= 0 ? "Net nakit akisini pozitif tut" : "Giderleri gelir seviyesine yaklastir",
+      "En buyuk harcama kategorisinde kontrol noktasi olustur",
+      "Tasarruf oranini bir ust seviyeye tasi",
+    ],
+    disclaimer: DISCLAIMER,
+  };
+}
+function parseJsonSafely<T>(text: string): T | null {
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return null;
+  }
+}
+
+function repairBrokenJsonText(raw: string): string {
+  const cleaned = cleanJSONText(raw);
+  const start = cleaned.search(/[\[{]/);
+  if (start === -1) return cleaned;
+
+  const source = cleaned.slice(start);
+  const stack: Array<"{" | "["> = [];
+  let result = "";
+  let inString = false;
+  let escaped = false;
+
+  for (let i = 0; i < source.length; i++) {
+    const ch = source[i];
+
+    if (escaped) {
+      result += ch;
+      escaped = false;
+      continue;
+    }
+
+    if (ch === "\\") {
+      result += ch;
+      escaped = true;
+      continue;
+    }
+
+    if (ch === "\"") {
+      if (!inString) {
+        inString = true;
+        result += ch;
+        continue;
+      }
+
+      const rest = source.slice(i + 1);
+      const nextNonSpace = rest.match(/\S/);
+      const next = nextNonSpace?.[0];
+      const closesString = next === undefined || [",", "}", "]", ":"].includes(next);
+      if (closesString) {
+        inString = false;
+        result += ch;
+      } else {
+        result += "\\\"";
+      }
+      continue;
+    }
+
+    if (!inString) {
+      if (ch === "{" || ch === "[") stack.push(ch);
+      if (ch === "}" || ch === "]") stack.pop();
+    }
+
+    result += ch;
+  }
+
+  if (inString) result += "\"";
+  for (let i = stack.length - 1; i >= 0; i--) {
+    result += stack[i] === "{" ? "}" : "]";
+  }
+
+  return result.replace(/,\s*([}\]])/g, "$1");
+}
+
+function parseActionPlanOutput(text: string): ActionPlanOutput | null {
+  const candidates = [cleanJSONText(text), repairBrokenJsonText(text)];
+  for (const candidate of candidates) {
+    const parsed = parseJsonSafely<unknown>(candidate);
+    if (!parsed) continue;
+    const validated = ActionPlanOutputSchema.safeParse(parsed);
+    if (validated.success) return validated.data;
+  }
+  return null;
+}
+
 export async function ActionPlanAgent(input: AgentInput): Promise<ActionPlanOutput> {
   const { prompt, systemPrompt } = buildActionPlanPrompt(input);
-  const rawJson = await generateAIJSON<unknown>(prompt, systemPrompt);
-  const parsed = ActionPlanOutputSchema.safeParse(rawJson);
-  if (parsed.success) return parsed.data;
-  throw new Error("Aksiyon planı doğrulanamadı.");
+  try {
+    const response = await generateAIResponse(
+      [{ role: "user", content: prompt }],
+      { systemPrompt: `${systemPrompt}\n\nYALNIZCA geçerli JSON ver.` , responseMimeType: "application/json" }
+    );
+    const parsed = parseActionPlanOutput(response.text);
+    if (parsed) return parsed;
+  } catch {
+    // fall through to deterministic fallback
+  }
+
+  return buildDeterministicActionPlanFallback(input);
 }
 
 // ============================================================
@@ -917,10 +1373,15 @@ JSON formatında yanıt ver:
   "disclaimer": "${DISCLAIMER}"
 }`;
 
-  const rawJson = await generateAIJSON<unknown>(prompt, REPORT_PROMPT);
-  const parsed = ReportOutputSchema.safeParse(rawJson);
-  if (parsed.success) return parsed.data;
-  throw new Error("Rapor yanıtı doğrulanamadı.");
+    try {
+    const rawJson = await generateAIJSON<unknown>(prompt, REPORT_PROMPT);
+    const parsed = ReportOutputSchema.safeParse(rawJson);
+    if (parsed.success) return parsed.data;
+  } catch {
+    // fall through to deterministic fallback
+  }
+
+  return buildDeterministicReportFallback(input, reportType, periodData);
 }
 
 // ============================================================

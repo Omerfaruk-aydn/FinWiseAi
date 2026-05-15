@@ -7,7 +7,7 @@ import {
   internalErrorResponse,
 } from "@/lib/api-response";
 import { getRequiredSession } from "@/lib/session";
-import { ActionPlanAgent } from "@/lib/ai/agents";
+import { ActionPlanAgent, buildDeterministicActionPlanFallback } from "@/lib/ai/agents";
 import {
   calculateMonthlyIncome,
   calculateMonthlyExpenses,
@@ -96,18 +96,29 @@ export async function POST(_req: NextRequest) {
       .map(([name, amount]) => ({ categoryName: name, amount, percent: monthlyExpenses > 0 ? (amount / monthlyExpenses) * 100 : 0 }))
       .sort((a, b) => b.amount - a.amount).slice(0, 5);
 
-    const planOutput = await ActionPlanAgent({
+    const financialData = {
+      monthlyIncome,
+      monthlyExpenses,
+      netCashflow,
+      savingRate,
+      debtLoadRatio,
+      currency: user?.currency ?? "TRY",
+      currentMonth: month,
+      currentYear: year,
+      topExpenseCategories: topCategories,
+      debts: (debts as Array<{ id: string; title: string; type: string; remainingAmount: number; minimumPayment: number; interestRate: number }>).map((d) => ({ id: d.id, title: d.title, type: d.type, remainingAmount: d.remainingAmount, minimumPayment: d.minimumPayment, interestRate: d.interestRate })),
+      goals: (goals as Array<{ id: string; title: string; targetAmount: number; currentAmount: number; deadline: Date | null }>).map((g) => ({ id: g.id, title: g.title, targetAmount: g.targetAmount, currentAmount: g.currentAmount, deadline: g.deadline?.toISOString().split("T")[0] ?? null, progressPercent: g.targetAmount > 0 ? (g.currentAmount / g.targetAmount) * 100 : 0 })),
+      subscriptions: (subscriptions as Array<{ id: string; title: string; amount: number; billingCycle: string }>).map((s) => ({ id: s.id, title: s.title, amount: s.amount, billingCycle: s.billingCycle, monthlyAmount: s.billingCycle === "MONTHLY" ? s.amount : s.amount / 12 })),
+    };
+
+    const agentInput = {
       userId: session.user.id,
-      financialData: {
-        monthlyIncome, monthlyExpenses, netCashflow, savingRate, debtLoadRatio,
-        currency: user?.currency ?? "TRY",
-        currentMonth: month, currentYear: year,
-        topExpenseCategories: topCategories,
-        debts: (debts as Array<{ id: string; title: string; type: string; remainingAmount: number; minimumPayment: number; interestRate: number }>).map((d) => ({ id: d.id, title: d.title, type: d.type, remainingAmount: d.remainingAmount, minimumPayment: d.minimumPayment, interestRate: d.interestRate })),
-        goals: (goals as Array<{ id: string; title: string; targetAmount: number; currentAmount: number; deadline: Date | null }>).map((g) => ({ id: g.id, title: g.title, targetAmount: g.targetAmount, currentAmount: g.currentAmount, deadline: g.deadline?.toISOString().split("T")[0] ?? null, progressPercent: g.targetAmount > 0 ? (g.currentAmount / g.targetAmount) * 100 : 0 })),
-        subscriptions: (subscriptions as Array<{ id: string; title: string; amount: number; billingCycle: string }>).map((s) => ({ id: s.id, title: s.title, amount: s.amount, billingCycle: s.billingCycle, monthlyAmount: s.billingCycle === "MONTHLY" ? s.amount : s.amount / 12 })),
-      },
-    });
+      financialData,
+    };
+
+    const planOutput = await ActionPlanAgent(agentInput).catch(() =>
+      buildDeterministicActionPlanFallback(agentInput)
+    );
 
     // Veritabanına kaydet
     const actionPlan = await prisma.actionPlan.create({

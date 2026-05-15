@@ -645,9 +645,6 @@ export default function ActionPlanPage() {
                 </div>
               )}
             </div>
-            <button onClick={handleCreatePlan} disabled={isCreating} className="w-full mt-4 flex items-center justify-between px-4 py-2.5 rounded-lg border border-[#10B981] bg-white text-[#10B981] text-xs font-bold hover:bg-green-50 transition-colors disabled:opacity-60">
-              Detaylı AI Analizi <ChevronRight className="w-4 h-4" />
-            </button>
           </div>
         </div>
       </div>

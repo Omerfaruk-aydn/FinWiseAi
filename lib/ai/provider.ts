@@ -10,6 +10,7 @@ export interface AIGenerateOptions {
   temperature?: number;
   maxTokens?: number;
   systemPrompt?: string;
+  responseMimeType?: "application/json" | "text/plain";
 }
 
 export interface AIResponse {
@@ -78,11 +79,13 @@ async function callGeminiWithModel(
     generationConfig: {
       temperature,
       maxOutputTokens,
-      responseMimeType: options.systemPrompt?.includes("YALNIZCA geçerli JSON") ||
+      responseMimeType:
+        options.responseMimeType ??
+        (options.systemPrompt?.includes("YALNIZCA geçerli JSON") ||
         options.systemPrompt?.includes("YALNIZCA ge") ||
         options.systemPrompt?.includes("YALNIZCA")
-        ? "application/json"
-        : "text/plain",
+          ? "application/json"
+          : "text/plain"),
     },
   };
 
@@ -204,10 +207,33 @@ JSON dışında hiçbir şey yazma. Yanıt doğrudan JSON ile başlamalı ve JSO
 
   const response = await callGemini(
     [{ role: "user", content: prompt }],
-    { ...options, systemPrompt: jsonSystemPrompt }
+    { ...options, systemPrompt: jsonSystemPrompt, responseMimeType: "application/json" }
   );
 
-  return JSON.parse(cleanJSONText(response.text)) as T;
+  const parsedText = cleanJSONText(response.text);
+
+  try {
+    return JSON.parse(parsedText) as T;
+  } catch (error) {
+    const repairPrompt = `Aşağıdaki çıktı geçersiz JSON. Yalnızca geçerli JSON döndür. Yapıyı, alanları ve anlamı koru. String içindeki kaçışsız tırnakları düzelt, eksik süslü parantezleri tamamla, markdown veya açıklama ekleme.
+
+ÇIKTI:
+\`\`\`
+${response.text}
+\`\`\``;
+
+    const repairResponse = await callGemini(
+      [{ role: "user", content: repairPrompt }],
+      {
+        ...options,
+        systemPrompt: `${jsonSystemPrompt}\n\nJSON ONARIM MODU: Yalnızca geçerli JSON döndür.`,
+        temperature: 0,
+        responseMimeType: "application/json",
+      }
+    );
+
+    return JSON.parse(cleanJSONText(repairResponse.text)) as T;
+  }
 }
 
 /**
